@@ -49,3 +49,16 @@ spec:
                 name: jwtgenerator-config
                 key: jwt_seed
 
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: jwtgenerator
+spec:
+  type: LoadBalancer
+  selector:
+    app: jwtgenerator
+  ports:
+    - port: 8000
+      targetPort: 8000
