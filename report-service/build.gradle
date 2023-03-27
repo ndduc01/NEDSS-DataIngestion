@@ -6,14 +6,14 @@ buildscript {
 		gradlePluginPortal()
 	}
 	dependencies {
-		classpath "org.springframework.boot:spring-boot-gradle-plugin:3.0.0"
+		classpath "org.springframework.boot:spring-boot-gradle-plugin:2.5.8"
 		classpath "gradle.plugin.com.github.johnrengelman:shadow:7.1.2"
 	}
 }
 
 plugins {
 	id 'java'
-	id 'org.springframework.boot' version '3.0.0'
+	id 'org.springframework.boot' version '2.5.8'
 	id 'io.spring.dependency-management' version '1.1.0'
 	id 'com.github.johnrengelman.shadow' version '7.1.2'
 	id 'checkstyle'
@@ -49,19 +49,22 @@ jar {
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa:2.5.8'
+	implementation 'org.springframework.boot:spring-boot-starter-web:2.5.8'
 
-	implementation 'org.springframework.boot:spring-boot-starter'
+	implementation 'org.springframework.boot:spring-boot-starter:2.5.8'
 	implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
 	implementation 'com.microsoft.sqlserver:mssql-jdbc:11.2.3.jre18'
-	compileOnly 'org.projectlombok:lombok'
-	annotationProcessor 'org.projectlombok:lombok'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	compileOnly 'org.projectlombok:lombok:1.18.26'
+	annotationProcessor 'org.projectlombok:lombok:1.18.26'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test:2.5.8'
 	testImplementation(platform('org.junit:junit-bom:5.9.1'))
-	testImplementation('org.junit.jupiter:junit-jupiter')
+	testImplementation('org.junit.jupiter:junit-jupiter:5.9.2')
 	testImplementation 'org.testcontainers:testcontainers:1.17.3'
 	testImplementation "org.testcontainers:mssqlserver:1.17.6"
+	testImplementation "org.testcontainers:junit-jupiter:1.17.6"
+	testImplementation 'org.testcontainers:postgresql:1.17.6'
+	runtimeOnly 'org.postgresql:postgresql:42.5.4'
 }
 
 test {
