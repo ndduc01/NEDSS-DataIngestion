@@ -14,6 +14,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.support.TestPropertySourceUtils;
+import org.testcontainers.containers.MSSQLServerContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -33,10 +34,19 @@ public class RawMessageServiceIT {
     @Container
     private static final PostgreSQLContainer<?> database = new PostgreSQLContainer<>("postgres:12.9-alpine");
 
+    //@Container
+    //private static final MSSQLServerContainer database = new MSSQLServerContainer()
+      //      .acceptLicense();
+
+
     public static class DataSourceInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
 
         @Override
         public void initialize(ConfigurableApplicationContext applicationContext) {
+            database.start();
+            System.out.println("postgres:" + database.getJdbcUrl());
+            System.out.println("MSSQLServer:" + database.getJdbcUrl());
+
             TestPropertySourceUtils.addInlinedPropertiesToEnvironment(
                     applicationContext,
                     "spring.test.database.replace=none",
