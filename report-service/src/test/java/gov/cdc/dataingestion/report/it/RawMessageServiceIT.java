@@ -4,6 +4,8 @@ import gov.cdc.dataingestion.report.entity.RawMessageEntity;
 import gov.cdc.dataingestion.report.service.impl.RawMessageServiceImpl;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.platform.commons.logging.Logger;
+import org.junit.platform.commons.logging.LoggerFactory;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -15,9 +17,11 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.support.TestPropertySourceUtils;
 import org.testcontainers.containers.MSSQLServerContainer;
-import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
+
+import java.util.Collections;
 
 
 @Testcontainers
@@ -28,15 +32,22 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @SpringBootTest
 public class RawMessageServiceIT {
 
+    private static final Logger log = LoggerFactory.getLogger(RawMessageServiceIT.class);
+
     @Autowired
     private RawMessageServiceImpl rawMessageServiceImpl;
 
-    @Container
-    private static final PostgreSQLContainer<?> database = new PostgreSQLContainer<>("postgres:12.9-alpine");
-
     //@Container
-    //private static final MSSQLServerContainer database = new MSSQLServerContainer()
-      //      .acceptLicense();
+    //private static final PostgreSQLContainer<?> database = new PostgreSQLContainer<>("postgres:12.9-alpine");
+
+    private static final DockerImageName taggedImageName = DockerImageName.parse("mcr.microsoft.com/azure-sql-edge")
+            .withTag("latest")
+      .asCompatibleSubstituteFor("mcr.microsoft.com/mssql/server");
+    @Container
+    private static final MSSQLServerContainer database = new MSSQLServerContainer<>(taggedImageName)
+            .withTmpFs(Collections.singletonMap("/testtmpfs", "rw"))
+            .withReuse(true)
+            .acceptLicense();
 
 
     public static class DataSourceInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
@@ -44,6 +55,7 @@ public class RawMessageServiceIT {
         @Override
         public void initialize(ConfigurableApplicationContext applicationContext) {
             database.start();
+            System.out.println("Started::" + database.isRunning());
             System.out.println("postgres:" + database.getJdbcUrl());
             System.out.println("MSSQLServer:" + database.getJdbcUrl());
 
@@ -63,7 +75,7 @@ public class RawMessageServiceIT {
 
         RawMessageEntity entity = new RawMessageEntity();
         entity.setId("Test1");
-        entity.setFile("Content");
+        entity.setFileContent("Content");
 
         String newEntityId = rawMessageServiceImpl.save(entity);
         RawMessageEntity entityRetrieved = rawMessageServiceImpl.findById(newEntityId);
