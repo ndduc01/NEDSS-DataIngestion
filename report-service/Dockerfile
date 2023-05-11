@@ -7,6 +7,7 @@ COPY gradlew /usr/src/dataingestion/gradlew
 COPY build.gradle /usr/src/dataingestion/build.gradle
 COPY settings.gradle /usr/src/dataingestion/settings.gradle
 
+
 #Copy sources
 COPY hl7-parser /usr/src/dataingestion/hl7-parser
 COPY report-service /usr/src/dataingestion/report-service
