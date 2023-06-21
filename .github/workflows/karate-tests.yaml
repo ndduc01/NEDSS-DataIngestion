@@ -6,7 +6,7 @@ on:
       - Demo-branch-ignore
   pull_request:
     branches:
-      - Demo-branch-ignore
+      - main
 
 jobs:
   build:
@@ -77,7 +77,7 @@ jobs:
           name: karate-report
           retention-days: 1
           path: |
-           ./karatetest/build/cucumber-html-reports
+           ./karatetest/build/cucumber-html-reports/
            ./karatetest/build/karate-reports
           
           
