@@ -6,7 +6,7 @@ on:
       - Demo-branch-ignore
   pull_request:
     branches:
-      - main
+      - Demo-branch-ignore
 
 jobs:
   build:
