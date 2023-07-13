@@ -2,20 +2,27 @@ version: 0.2
 
 phases:
   install:
+    commands:
+      - echo "Installing unzip"
+      - apt-get -y install unzip
+      - echo "Installing SDKMAN"
+      - curl -s "https://get.sdkman.io" | bash
+      - echo "Initializing SDKMAN"
+      - /bin/bash -c "source $HOME/.sdkman/bin/sdkman-init.sh"
+      - echo "Installing Gradle"
+      - sdk install gradle
+      - echo "Installing Java"
+      - sdk install java
     runtime-versions:
       java: corretto11
-    commands:
-      - apt-get -y install unzip
-      - curl -s "https://get.sdkman.io" | bash
-      - source "$HOME/.sdkman/bin/sdkman-init.sh"
-      - sdk install gradle
-      - sdk install java
+    shell: bash
 
   pre_build:
     commands:
       - echo "Setting up environment..."
       - cd karatetest
       - chmod +x gradlew
+    shell: bash
 
   build:
     commands:
@@ -37,7 +44,6 @@ phases:
       - export TEST_API_PASSWORD=${API_PASSWORD}
       - export TEST_NBS_URL=${NBS_URL}
       - export TEST_WRONGAPIURL=${WRONGAPIURL}
-      - cd karatetest
       - ./gradlew test \
           -Dkarate.options="$KARATE_OPTIONS" \
           -Dkarate.env="$KARATE_ENV" \
@@ -56,6 +62,7 @@ phases:
           -Dtest.apipassword="$TEST_API_PASSWORD" \
           -Dtest.nbsurl="$TEST_NBS_URL" \
           -Dtest.wrongapiurl="$TEST_WRONGAPIURL"
+    shell: bash
 
 artifacts:
   files:
