@@ -26,7 +26,10 @@ phases:
       java: corretto17
     commands:
       - echo Installing dependencies...
-      - chmod +x karatetest/gradlew
+      - apt-get update
+      - apt-get install -y openjdk-17-jdk
+      - chmod +x gradlew
+
 
   build:
     commands:
@@ -59,10 +62,3 @@ artifacts:
   base-directory: './karatetest/build/cucumber-html-reports/'
   name: karate-cucumberreports.zip
 
-secondary-artifacts:
-  reports:
-    base-directory: './karatetest/build/karate-reports/'
-    files:
-      - '**/*'
-    type: zip
-    name: karate-karatereports.zip
