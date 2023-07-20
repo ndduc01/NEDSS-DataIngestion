@@ -7,11 +7,16 @@ env:
 phases:
   install:
     runtime-versions:
-      java: corretto17
+      java: corretto11
     commands:
       - echo Installing dependencies...
       - apt-get update
-      - apt-get install -y openjdk-17-jdk jq
+      - apt-get install -y jq
+      - wget https://corretto.aws/downloads/latest/amazon-corretto-17-x64-linux-jdk.tar.gz
+      - tar -xvf amazon-corretto-17-x64-linux-jdk.tar.gz
+      - export JAVA_HOME=$(pwd)/jdk-17.0.0.35
+      - export PATH=$JAVA_HOME/bin:$PATH
+      - java -version
       - cd ./karatetest
       - chmod +x gradlew
 
