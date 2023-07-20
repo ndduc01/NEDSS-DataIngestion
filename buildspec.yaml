@@ -7,7 +7,7 @@ env:
 phases:
   install:
     runtime-versions:
-      java: corretto17
+      java: corretto11
     commands:
       - echo Installing dependencies...
       - apt-get update
@@ -48,9 +48,3 @@ phases:
         -Dtest.nbsurl="$TEST_NBS_URL" \
         -Dtest.wrongapiurl="$TEST_WRONGAPIURL"
       
-artifacts:
-  type: zip
-  files:
-    - '**/*'
-  base-directory: './karatetest/build/cucumber-html-reports/'
-  name: karate-cucumberreports.zip
