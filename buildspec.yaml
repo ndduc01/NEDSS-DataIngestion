@@ -12,6 +12,7 @@ phases:
       - echo Installing dependencies...
       - apt-get update
       - apt-get install -y openjdk-17-jdk jq
+      - cd ./karatetest
       - chmod +x gradlew
 
   build:
@@ -47,4 +48,3 @@ phases:
         -Dtest.apipassword="$TEST_API_PASSWORD" \
         -Dtest.nbsurl="$TEST_NBS_URL" \
         -Dtest.wrongapiurl="$TEST_WRONGAPIURL"
-      
