@@ -23,16 +23,16 @@ phases:
       - echo Compiling the Karate tests...
       - |        
         TEST_SECRET=$(echo $TEST_SECRET | tr -d '\n' | jq -r)
-        TEST_API_URL=$(echo $TEST_SECRET | jq -r .APIURL | sed 's/\\//g') # added sed to unescape the URL
+        TEST_API_URL=$(echo $TEST_SECRET | jq -r .APIURL | sed 's/\\//g') 
         TEST_USERNAME=$(echo $TEST_SECRET | jq -r .username)
         TEST_PASSWORD=$(echo $TEST_SECRET | jq -r .password)
-        TEST_URL=$(echo $TEST_SECRET | jq -r .DATAINGEST_SERVER_URL | sed 's/\\//g') # added sed to unescape the URL
-        TEST_BOOTSTRAP_SERVERS=$(echo $TEST_SECRET | jq -r .KAFKA_SERVER | sed 's/\\//g') # added sed to unescape the URL
+        TEST_URL=$(echo $TEST_SECRET | jq -r .DATAINGEST_SERVER_URL | sed 's/\\//g') 
+        TEST_BOOTSTRAP_SERVERS=$(echo $TEST_SECRET | jq -r .KAFKA_SERVER | sed 's/\\//g') 
         TEST_GROUP_ID=$(echo $TEST_SECRET | jq -r .GROUPID)
         TEST_API_USERNAME=$(echo $TEST_SECRET | jq -r .API_USERNAME)
         TEST_API_PASSWORD=$(echo $TEST_SECRET | jq -r .API_PASSWORD)
-        TEST_NBS_URL=$(echo $TEST_SECRET | jq -r .NBS_URL | sed 's/\\//g') # added sed to unescape the URL
-        TEST_WRONGAPIURL=$(echo $TEST_SECRET | jq -r .WRONGAPIURL | sed 's/\\//g') # added sed to unescape the URL
+        TEST_NBS_URL=$(echo $TEST_SECRET | jq -r .NBS_URL | sed 's/\\//g') 
+        TEST_WRONGAPIURL=$(echo $TEST_SECRET | jq -r .WRONGAPIURL | sed 's/\\//g') 
         TEST_DRIVERCLASSNAME=$DRIVERCLASSNAME
         TEST_KARATE_READTIMEOUT=$KARATE_READTIMEOUT
         TEST_KARATE_RETRYCOUNT=$KARATE_RETRYCOUNT
