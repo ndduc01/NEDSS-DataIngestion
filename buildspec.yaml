@@ -21,9 +21,7 @@ phases:
     commands:
       - echo Build started on `date`
       - echo Compiling the Karate tests...
-      - |
-        echo Partial secret for debugging: $(echo $TEST_SECRET | cut -b 1-50)
-        
+      - |        
         TEST_SECRET=$(echo $TEST_SECRET | tr -d '\n' | jq -r)
         TEST_API_URL=$(echo $TEST_SECRET | jq -r .APIURL)
         TEST_USERNAME=$(echo $TEST_SECRET | jq -r .username)
@@ -54,3 +52,7 @@ phases:
         -Dtest.apipassword="$TEST_API_PASSWORD" \
         -Dtest.nbsurl="$TEST_NBS_URL" \
         -Dtest.wrongapiurl="$TEST_WRONGAPIURL"
+
+    post_build:
+     commands:
+      - aws s3 cp ./karatetest/build/reports/tests/test/index.html s3://karate-test-report/test-reports/
