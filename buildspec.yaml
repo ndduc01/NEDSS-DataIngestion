@@ -22,7 +22,9 @@ phases:
       - echo Build started on `date`
       - echo Compiling the Karate tests...
       - |
-        TEST_SECRET=$(echo $TEST_SECRET | jq -r)
+        echo Partial secret for debugging: $(echo $TEST_SECRET | cut -b 1-50)
+        
+        TEST_SECRET=$(echo $TEST_SECRET | tr -d '\n' | jq -r)
         TEST_API_URL=$(echo $TEST_SECRET | jq -r .APIURL)
         TEST_USERNAME=$(echo $TEST_SECRET | jq -r .username)
         TEST_PASSWORD=$(echo $TEST_SECRET | jq -r .password)
@@ -33,6 +35,7 @@ phases:
         TEST_API_PASSWORD=$(echo $TEST_SECRET | jq -r .API_PASSWORD)
         TEST_NBS_URL=$(echo $TEST_SECRET | jq -r .NBS_URL)
         TEST_WRONGAPIURL=$(echo $TEST_SECRET | jq -r .WRONGAPIURL)
+        
         ./gradlew test \
         -Dkarate.options="$KARATE_OPTIONS" \
         -Dkarate.env="$KARATE_ENV" \
