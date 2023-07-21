@@ -66,4 +66,3 @@ artifacts:
     - 'karatetest/build/karate-reports/**/*'
   base-directory: './'
   discard-paths: no
-  name: karate-report-${CODEBUILD_BUILD_ID}
