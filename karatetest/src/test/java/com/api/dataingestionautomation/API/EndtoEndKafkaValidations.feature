@@ -36,10 +36,10 @@ Feature: Scenarios to test end to end flow along with Kafka validations
     And eval Thread.sleep(400)
      And match elr_raw_id[0].id == response
      And match elr_raw_id[0].payload == modifiedData
-    # * def elr_raw_validated_id = db.readRows('select raw_message_id, id, validated_message from elr_validated where raw_message_id = \'' + response + '\'')
-    # And eval Thread.sleep(400)
-    # And match elr_raw_validated_id[0].raw_message_id == response
-    # * def kafka_elr_validated_id =  elr_raw_validated_id[0].id
+    * def elr_raw_validated_id = db.readRows('select raw_message_id, id, validated_message from elr_validated where raw_message_id = \'' + response + '\'')
+     And eval Thread.sleep(400)
+     And match elr_raw_validated_id[0].raw_message_id == response
+     * def kafka_elr_validated_id =  elr_raw_validated_id[0].id
     # And eval Thread.sleep(600)
     #* def elr_fhir_id = db.readRows('select raw_message_id, id from elr_fhir where raw_message_id = \'' + response + '\'')
     #* def kafka_elr_fhir_id = elr_fhir_id[0].id
