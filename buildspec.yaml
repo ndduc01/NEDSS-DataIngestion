@@ -33,15 +33,22 @@ phases:
         TEST_API_PASSWORD=$(echo $TEST_SECRET | jq -r .API_PASSWORD)
         TEST_NBS_URL=$(echo $TEST_SECRET | jq -r .NBS_URL | sed 's/\\//g') # added sed to unescape the URL
         TEST_WRONGAPIURL=$(echo $TEST_SECRET | jq -r .WRONGAPIURL | sed 's/\\//g') # added sed to unescape the URL
-        
+        TEST_DRIVERCLASSNAME=$DRIVERCLASSNAME
+        TEST_KARATE_READTIMEOUT=$KARATE_READTIMEOUT
+        TEST_KARATE_RETRYCOUNT=$KARATE_RETRYCOUNT
+        TEST_RETRYINTERVAL=$RETRYINTERVAL
+        TEST_CONNECT_TIMEOUT=$CONNECT_TIMEOUT
+        TEST_ENV=$ENV
+        TEST_KARATE_OPTIONS=$KARATE_OPTIONS
+
         ./gradlew test \
-        -Dkarate.options="$KARATE_OPTIONS" \
-        -Dkarate.env="$ENV" \
+        -Dkarate.options="$TEST_KARATE_OPTIONS" \
+        -Dkarate.env="$TEST_ENV" \
         -Dtest.apiurl="$TEST_API_URL" \
-        -DconnectTimeout="$CONNECT_TIMEOUT" \
-        -DreadTimeout="$KARATE_READTIMEOUT" \
-        -DretryCount="$KARATE_RETRYCOUNT" \
-        -DretryInterval="$RETRY_INTERVAL" \
+        -DconnectTimeout="$TEST_CONNECT_TIMEOUT" \
+        -DreadTimeout="$TEST_KARATE_READTIMEOUT" \
+        -DretryCount="$TEST_KARATE_RETRYCOUNT" \
+        -DretryInterval="$TEST_RETRYINTERVAL" \
         -Dtest.username="$TEST_USERNAME" \
         -Dtest.password="$TEST_PASSWORD" \
         -Dtest.url="$TEST_URL" \
