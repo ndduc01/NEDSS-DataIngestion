@@ -53,6 +53,12 @@ phases:
         -Dtest.nbsurl="$TEST_NBS_URL" \
         -Dtest.wrongapiurl="$TEST_WRONGAPIURL"
 
-    post_build:
-     commands:
-      - aws s3 cp ./karatetest/build/reports/tests/test/index.html s3://karate-test-report/test-reports/
+artifacts:
+  files:
+    - 'karatetest/build/cucumber-html-reports/**/*'
+    - 'karatetest/build/karate-reports/**/*'
+  base-directory: './'
+  discard-paths: no
+  name: karate-report
+   
+
