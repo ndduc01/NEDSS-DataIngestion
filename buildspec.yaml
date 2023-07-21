@@ -7,16 +7,13 @@ env:
 phases:
   install:
     runtime-versions:
-      java: corretto11
+      java: corretto17
     commands:
+      - echo Checking the pre-installed java version
+      - java -version
       - echo Installing dependencies...
       - apt-get update
       - apt-get install -y jq
-      - wget https://corretto.aws/downloads/latest/amazon-corretto-17-x64-linux-jdk.tar.gz
-      - tar -xvf amazon-corretto-17-x64-linux-jdk.tar.gz
-      - export JAVA_HOME=$(pwd)/jdk-17.0.0.35
-      - export PATH=$JAVA_HOME/bin:$PATH
-      - java -version
       - cd ./karatetest
       - chmod +x gradlew
 
@@ -25,6 +22,7 @@ phases:
       - echo Build started on `date`
       - echo Compiling the Karate tests...
       - |
+        TEST_SECRET=$(echo $TEST_SECRET | jq -r)
         TEST_API_URL=$(echo $TEST_SECRET | jq -r .APIURL)
         TEST_USERNAME=$(echo $TEST_SECRET | jq -r .username)
         TEST_PASSWORD=$(echo $TEST_SECRET | jq -r .password)
