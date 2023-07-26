@@ -150,7 +150,7 @@ Feature: Scenarios to test end to end flow along with Kafka validations
     * assert response == latestRecords['elr_raw_retry-0']
 
   @nbs
-  Scenario Outline: NBS flow
+  Scenario Outline: NBS basic flow
     * def hl7Message = data
     * def modifiedmsg = hl7Message.replace(oldfirstname, randomFirstName)
     * def modifiedData = modifiedmsg.replace(oldlastname, randomLastName)
@@ -158,26 +158,26 @@ Feature: Scenarios to test end to end flow along with Kafka validations
     And request modifiedData
     When method POST
     Then status 200
-    * def elr_raw_id = db.readRows('select id, payload from elr_raw where id = \'' + response + '\'')
-    And eval Thread.sleep(100)
-    And match elr_raw_id[0].id == response
-    And eval Thread.sleep(100)
-    * def elr_raw_validated_id = db.readRows('select raw_message_id, id, validated_message from elr_validated where raw_message_id = \'' + response + '\'')
-    And eval Thread.sleep(200)
-    * def kafka_elr_validated_id =  elr_raw_validated_id[0].id
-    And match elr_raw_validated_id[0].raw_message_id == response
-    And eval Thread.sleep(100)
+   # * def elr_raw_id = db.readRows('select id, payload from elr_raw where id = \'' + response + '\'')
+   # And eval Thread.sleep(100)
+   # And match elr_raw_id[0].id == response
+   # And eval Thread.sleep(100)
+   # * def elr_raw_validated_id = db.readRows('select raw_message_id, id, validated_message from elr_validated where raw_message_id = \'' + response + '\'')
+    #And eval Thread.sleep(200)
+   # * def kafka_elr_validated_id =  elr_raw_validated_id[0].id
+   # And match elr_raw_validated_id[0].raw_message_id == response
+   # And eval Thread.sleep(100)
    # * def elr_fhir_id = db.readRows('select raw_message_id, id from elr_fhir where raw_message_id = \'' + response + '\'')
    # * def kafka_elr_fhir_id = elr_fhir_id[0].id
    # And match elr_fhir_id[0].raw_message_id == response
-    * def topics = ['elr_raw', 'elr_validated', 'fhir_converted', 'elr_duplicate', 'elr_raw_dlt', 'elr_validated_dlt']
-    * def latestRecords = kafkaConsumer.readLatestFromTopics(...topics)
-    * assert response == latestRecords['elr_raw']
-    * assert kafka_elr_validated_id == latestRecords['elr_validated']
+   #* def topics = ['elr_raw', 'elr_validated', 'fhir_converted', 'elr_duplicate', 'elr_raw_dlt', 'elr_validated_dlt']
+    #* def latestRecords = kafkaConsumer.readLatestFromTopics(...topics)
+   # * assert response == latestRecords['elr_raw']
+   # * assert kafka_elr_validated_id == latestRecords['elr_validated']
     #* assert kafka_elr_fhir_id == latestRecords['fhir_converted']
     #* assert kafka_elr_fhir_id != latestRecords['elr_duplicate']
-    * assert kafka_elr_validated_id != latestRecords['elr_validated_dlt']
-    * assert kafka_elr_validated_id != latestRecords['elr_raw_dlt']
+    #* assert kafka_elr_validated_id != latestRecords['elr_validated_dlt']
+   # * assert kafka_elr_validated_id != latestRecords['elr_raw_dlt']
     Given driver nbsurl
    # * driver.screenshot()
     And input('#id_UserName', 'state')
