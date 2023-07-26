@@ -2,7 +2,7 @@ version: 0.2
 
 env:
   secrets-manager:
-    TEST_SECRET: test/testteam/karatetest/secrets
+    TEST_SECRET: dev/dataingestionteam/karatetest/secrets
 
 phases:
   install:
