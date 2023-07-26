@@ -9,38 +9,61 @@ phases:
     runtime-versions:
       java: corretto17
     commands:
-      - echo Checking the pre-installed java version && java -version
+      - echo Checking the pre-installed java version
+      - java -version
       - echo Installing dependencies...
-      - apt-get update && apt-get install -y jq
-      - chmod +x ./karatetest/gradlew
-
-  pre_build:
-    commands:
-      - TEST_SECRET=$(echo $TEST_SECRET | tr -d '\n' | jq -r)
-      - export TEST_SECRET
+      - apt-get update
+      - apt-get install -y jq
+      - cd ./karatetest
+      - chmod +x gradlew
 
   build:
     commands:
       - echo Build started on `date`
       - echo Compiling the Karate tests...
-      - ./karatetest/gradlew test \
-          -Dkarate.options="$(echo $TEST_SECRET | jq -r .KARATE_OPTIONS)" \
-          -Dkarate.env="$(echo $TEST_SECRET | jq -r .ENV)" \
-          -Dtest.apiurl="$(echo $TEST_SECRET | jq -r .APIURL | sed 's/\\//g')" \
-          -DconnectTimeout="$(echo $TEST_SECRET | jq -r .CONNECT_TIMEOUT)" \
-          -DreadTimeout="$(echo $TEST_SECRET | jq -r .KARATE_READTIMEOUT)" \
-          -DretryCount="$(echo $TEST_SECRET | jq -r .KARATE_RETRYCOUNT)" \
-          -DretryInterval="$(echo $TEST_SECRET | jq -r .RETRYINTERVAL)" \
-          -Dtest.username="$(echo $TEST_SECRET | jq -r .username)" \
-          -Dtest.password="$(echo $TEST_SECRET | jq -r .password)" \
-          -Dtest.url="$(echo $TEST_SECRET | jq -r .DATAINGEST_SERVER_URL | sed 's/\\//g')" \
-          -Dtest.driverClassName="$DRIVERCLASSNAME" \
-          -Dtest.bootstrapServers="$(echo $TEST_SECRET | jq -r .KAFKA_SERVER | sed 's/\\//g')" \
-          -Dtest.groupId="$(echo $TEST_SECRET | jq -r .GROUPID)" \
-          -Dtest.apiusername="$(echo $TEST_SECRET | jq -r .API_USERNAME)" \
-          -Dtest.apipassword="$(echo $TEST_SECRET | jq -r .API_PASSWORD)" \
-          -Dtest.nbsurl="$(echo $TEST_SECRET | jq -r .NBS_URL | sed 's/\\//g')" \
-          -Dtest.wrongapiurl="$(echo $TEST_SECRET | jq -r .WRONGAPIURL | sed 's/\\//g')"
+      - |        
+        TEST_SECRET=$(echo $TEST_SECRET | tr -d '\n' | jq -r)
+        TEST_API_URL=$(echo $TEST_SECRET | jq -r .APIURL | sed 's/\\//g') 
+        TEST_USERNAME=$(echo $TEST_SECRET | jq -r .username)
+        TEST_PASSWORD=$(echo $TEST_SECRET | jq -r .password)
+        TEST_URL=$(echo $TEST_SECRET | jq -r .DATAINGEST_SERVER_URL | sed 's/\\//g') 
+        TEST_BOOTSTRAP_SERVERS=$(echo $TEST_SECRET | jq -r .KAFKA_SERVER | sed 's/\\//g') 
+        TEST_GROUP_ID=$(echo $TEST_SECRET | jq -r .GROUPID)
+        TEST_API_USERNAME=$(echo $TEST_SECRET | jq -r .API_USERNAME)
+        TEST_API_PASSWORD=$(echo $TEST_SECRET | jq -r .API_PASSWORD)
+        TEST_NBS_URL=$(echo $TEST_SECRET | jq -r .NBS_URL | sed 's/\\//g') 
+        TEST_WRONGAPIURL=$(echo $TEST_SECRET | jq -r .WRONGAPIURL | sed 's/\\//g') 
+        TEST_DRIVERCLASSNAME=$DRIVERCLASSNAME
+        TEST_KARATE_READTIMEOUT=$KARATE_READTIMEOUT
+        TEST_KARATE_RETRYCOUNT=$KARATE_RETRYCOUNT
+        TEST_RETRYINTERVAL=$RETRYINTERVAL
+        TEST_CONNECT_TIMEOUT=$CONNECT_TIMEOUT
+        TEST_ENV=$ENV
+        TEST_KARATE_OPTIONS=$KARATE_OPTIONS
+
+        ./gradlew test \
+        -Dkarate.options="$TEST_KARATE_OPTIONS" \
+        -Dkarate.env="$TEST_ENV" \
+        -Dtest.apiurl="$TEST_API_URL" \
+        -DconnectTimeout="$TEST_CONNECT_TIMEOUT" \
+        -DreadTimeout="$TEST_KARATE_READTIMEOUT" \
+        -DretryCount="$TEST_KARATE_RETRYCOUNT" \
+        -DretryInterval="$TEST_RETRYINTERVAL" \
+        -Dtest.username="$TEST_USERNAME" \
+        -Dtest.password="$TEST_PASSWORD" \
+        -Dtest.url="$TEST_URL" \
+        -Dtest.driverClassName="$TEST_DRIVERCLASSNAME" \
+        -Dtest.bootstrapServers="$TEST_BOOTSTRAP_SERVERS" \
+        -Dtest.groupId="$TEST_GROUP_ID" \
+        -Dtest.apiusername="$TEST_API_USERNAME" \
+        -Dtest.apipassword="$TEST_API_PASSWORD" \
+        -Dtest.nbsurl="$TEST_NBS_URL" \
+        -Dtest.wrongapiurl="$TEST_WRONGAPIURL"
+
+cache:
+  paths:
+    - '/root/.gradle/caches/**/*'
+    - '/root/.gradle/wrapper/**/*'
 
 artifacts:
   files:
@@ -48,3 +71,4 @@ artifacts:
     - 'karatetest/build/karate-reports/**/*'
   base-directory: './'
   discard-paths: no
+
