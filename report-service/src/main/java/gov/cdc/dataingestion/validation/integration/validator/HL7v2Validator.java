@@ -7,6 +7,7 @@ import ca.uhn.hl7v2.parser.PipeParser;
 import ca.uhn.hl7v2.validation.impl.ValidationContextFactory;
 import gov.cdc.dataingestion.hl7.helper.HL7Helper;
 import gov.cdc.dataingestion.hl7.helper.integration.exception.DiHL7Exception;
+import gov.cdc.dataingestion.metrics.CustomMetricsBuilder;
 import gov.cdc.dataingestion.report.repository.model.RawERLModel;
 import gov.cdc.dataingestion.validation.integration.validator.interfaces.IHL7v2Validator;
 import gov.cdc.dataingestion.validation.repository.model.ValidatedELRModel;
@@ -28,15 +29,29 @@ public class HL7v2Validator implements IHL7v2Validator {
     public ValidatedELRModel MessageValidation(String id, RawERLModel rawERLModel, String topicName) throws DiHL7Exception {
         String replaceSpecialCharacters = MessageStringValidation(rawERLModel.getPayload());
         ValidatedELRModel model = new ValidatedELRModel();
-        var parsedMessage = this.hl7Helper.hl7StringParser(replaceSpecialCharacters);
+//        var parsedMessage = this.hl7Helper.hl7StringParser(replaceSpecialCharacters);
+//
+//
+//        model.setRawId(id);
+//        model.setRawMessage(replaceSpecialCharacters);
+//        model.setMessageType(EnumMessageType.HL7.name());
+//        model.setMessageVersion(parsedMessage.getOriginalVersion());
+//        model.setCreatedBy(topicName);
+//        model.setUpdatedBy(topicName);
 
-
-        model.setRawId(id);
-        model.setRawMessage(replaceSpecialCharacters);
-        model.setMessageType(EnumMessageType.HL7.name());
-        model.setMessageVersion(parsedMessage.getOriginalVersion());
-        model.setCreatedBy(topicName);
-        model.setUpdatedBy(topicName);
+        try {
+            var parsedMessage = this.hl7Helper.hl7StringParser(replaceSpecialCharacters);
+            model.setRawId(id);
+            model.setRawMessage(replaceSpecialCharacters);
+            model.setMessageType(EnumMessageType.HL7.name());
+            model.setMessageVersion(parsedMessage.getOriginalVersion());
+            model.setCreatedBy(topicName);
+            model.setUpdatedBy(topicName);
+        } catch (DiHL7Exception e) {
+            CustomMetricsBuilder.custom_total_validated_failure.increment();
+            throw new RuntimeException(e);
+        }
+        CustomMetricsBuilder.custom_total_validated_success.increment();
 
         return model;
     }

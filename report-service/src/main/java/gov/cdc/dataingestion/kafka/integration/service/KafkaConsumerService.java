@@ -16,6 +16,7 @@ import gov.cdc.dataingestion.exception.FhirConversionException;
 import gov.cdc.dataingestion.constant.TopicPreparationType;
 import gov.cdc.dataingestion.exception.XmlConversionException;
 import gov.cdc.dataingestion.hl7.helper.integration.exception.DiHL7Exception;
+import gov.cdc.dataingestion.metrics.CustomMetricsBuilder;
 import gov.cdc.dataingestion.report.repository.IRawELRRepository;
 import gov.cdc.dataingestion.report.repository.model.RawERLModel;
 import gov.cdc.dataingestion.validation.integration.validator.interfaces.IHL7DuplicateValidator;
@@ -87,7 +88,6 @@ public class KafkaConsumerService {
     private final IHL7ToFHIRRepository iHL7ToFHIRRepository;
     private final IHL7DuplicateValidator iHL7DuplicateValidator;
     private final NbsRepositoryServiceProvider nbsRepositoryServiceProvider;
-
     private final IElrDeadLetterRepository elrDeadLetterRepository;
 
     private String errorDltMessage = "Message not found in dead letter table";
@@ -229,6 +229,7 @@ public class KafkaConsumerService {
                                                  @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
                                                  @Header(KafkaHeaderValue.MessageOperation) String operation) throws Exception {
         log.debug("Received message ID: {} from topic: {}", message, topic);
+        CustomMetricsBuilder.custom_total_xml_conversion_requested.increment();
         xmlConversionHandler(message, operation);
 
     }
@@ -392,6 +393,7 @@ public class KafkaConsumerService {
                 var validMessage = iHl7v2Validator.MessageStringValidation(response.get().getMessage());
                 hl7Msg = validMessage;
             } else {
+                CustomMetricsBuilder.custom_total_xml_converted_failure.increment();
                 throw new XmlConversionException(errorDltMessage);
             }
         }
@@ -403,7 +405,13 @@ public class KafkaConsumerService {
         // this will be changed to debug
         log.info("rhapsodyXml: {}", rhapsodyXml);
       
-        nbsRepositoryServiceProvider.saveXmlMessage(message, rhapsodyXml);
+        boolean isXmlSaved = nbsRepositoryServiceProvider.saveXmlMessage(message, rhapsodyXml);
+        if(isXmlSaved) {
+            CustomMetricsBuilder.custom_total_xml_converted_success.increment();
+        }
+        else {
+            CustomMetricsBuilder.custom_total_xml_converted_failure.increment();
+        }
         kafkaProducerService.sendMessageAfterConvertedToXml(rhapsodyXml, convertedToXmlTopic, 0);
     }
     private void validationHandler(String message) throws DuplicateHL7FileFoundException, DiHL7Exception {
@@ -412,6 +420,7 @@ public class KafkaConsumerService {
         String messageType = elrModel.getType();
         switch (messageType) {
             case KafkaHeaderValue.MessageType_HL7v2:
+                CustomMetricsBuilder.custom_total_messages_validated.increment();
                 ValidatedELRModel hl7ValidatedModel = iHl7v2Validator.MessageValidation(message, elrModel, validatedTopic);
                 // Duplication check
                 iHL7DuplicateValidator.ValidateHL7Document(hl7ValidatedModel);

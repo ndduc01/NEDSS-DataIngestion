@@ -1,5 +1,6 @@
 package gov.cdc.dataingestion.security.controller;
 
+import gov.cdc.dataingestion.metrics.CustomMetricsBuilder;
 import gov.cdc.dataingestion.security.service.TokenService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -21,6 +22,7 @@ public class TokenController {
         log.debug("Token requested for user: '{}'", authentication.getName());
 
         String token = tokenService.generateToken(authentication);
+        CustomMetricsBuilder.custom_total_tokens_requested.increment();
         log.debug("Token granted: {}", token);
         return token;
     }

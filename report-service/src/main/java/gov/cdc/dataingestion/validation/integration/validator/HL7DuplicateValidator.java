@@ -2,6 +2,7 @@ package gov.cdc.dataingestion.validation.integration.validator;
 
 import gov.cdc.dataingestion.exception.DuplicateHL7FileFoundException;
 import gov.cdc.dataingestion.kafka.integration.service.KafkaProducerService;
+import gov.cdc.dataingestion.metrics.CustomMetricsBuilder;
 import gov.cdc.dataingestion.validation.integration.validator.interfaces.IHL7DuplicateValidator;
 import gov.cdc.dataingestion.validation.repository.IValidatedELRRepository;
 import gov.cdc.dataingestion.validation.repository.model.ValidatedELRModel;
@@ -30,6 +31,7 @@ public class HL7DuplicateValidator implements IHL7DuplicateValidator {
     @Override
     public void ValidateHL7Document(ValidatedELRModel hl7ValidatedModel) throws DuplicateHL7FileFoundException {
         String hashedString = null;
+        log.info("printing inside validate duplicate fn...");
         try {
             MessageDigest digestString = MessageDigest.getInstance("SHA-256");
             byte[] encodedByteHash = digestString.digest(hl7ValidatedModel.getRawMessage().getBytes());
@@ -45,9 +47,14 @@ public class HL7DuplicateValidator implements IHL7DuplicateValidator {
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
+
         if (!checkForDuplicateHL7HashString(hashedString)) {
+            log.info("printing inside validate duplicate fn...not ture");
             hl7ValidatedModel.setHashedHL7String(hashedString);
         } else {
+            log.info("custom_duplicate_hl7_counter counter before..." + CustomMetricsBuilder.custom_total_duplicate_hl7_found.count());
+            CustomMetricsBuilder.custom_total_duplicate_hl7_found.increment();
+            log.info("custom_duplicate_hl7_counter counter after..." + CustomMetricsBuilder.custom_total_duplicate_hl7_found.count());
             kafkaProducerService.sendMessageAfterCheckingDuplicateHL7(hl7ValidatedModel, validatedElrDuplicateTopic, 0);
             throw new DuplicateHL7FileFoundException("HL7 document already exists in the database. " +
                     "Please check " + validatedElrDuplicateTopic + " kafka topic for the failed document.");
