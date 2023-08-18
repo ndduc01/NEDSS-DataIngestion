@@ -1,4 +1,4 @@
-@parallel=false
+@parallel=true
 Feature: Test the API functionality scenarios
 
   Background:
