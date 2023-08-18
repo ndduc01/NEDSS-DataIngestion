@@ -21,7 +21,7 @@ Feature: Scenarios to test end to end flow along with Kafka validations
     * def randomFirstName = FakerHelper.getRandomFirstName()
     * def randomLastName = FakerHelper.getRandomLastName()
 
-  @regression
+  @regressionu
   Scenario Outline: Read Hl7 messages from JSON file and post it via REST API and perform Database and Kafka validations
     * def hl7Message = data
     * def modifiedmsg = hl7Message.replace(oldfirstname, randomFirstName)
@@ -57,7 +57,7 @@ Feature: Scenarios to test end to end flow along with Kafka validations
 
 
 
-  @regression
+  @regressionu
   Scenario: Transmit a bad Hl7 message and validate that data is only in ELR_RAw tables but not other tables
     Given url apiurl
     And request 'MSH|^~\&|SendingApp|SendingFac|ReceivingApp|ReceivingFac|20120411070545||ORU^R01|59689|P|2.9'
@@ -77,7 +77,7 @@ Feature: Scenarios to test end to end flow along with Kafka validations
 
 
 
-  @regression
+  @regressionu
   Scenario Outline: post the same Hl7 message twice and validate the record persists in elr_duplicate topic in kafka
     * def hl7Message = data
     * def modifiedmsg = hl7Message.replace(oldfirstname, randomFirstName)
@@ -117,7 +117,7 @@ Feature: Scenarios to test end to end flow along with Kafka validations
     Examples:
       | read('dupdata.json') |
 
-  @regression
+  @regressionu
   Scenario: post a Hl7 message and validate the record in retry topics
     * def oldlastname = 'LinkLogic'
     * def hl7Message = 'MSH|^~\\&|LinkLogic|TML|John|Doe|200905011130||ORU^R01|20161111-v25|T|2.9'
@@ -178,7 +178,7 @@ Feature: Scenarios to test end to end flow along with Kafka validations
       | read('dupdata.json') |
 
 
-  @regression
+  @regressionu
   Scenario: Transmit a valid Hl7 message with just the HL7 header information
     * header msgType = 'HL7'
     * def hl7Message = "MSH|^~\&|LinkLogic^^|LABCORP^34D0655059^CLIA|ALDOH^^|AL^^|202305251105||ORU^R01^ORU_R01|202305221034-A|P^|2.5.1"
