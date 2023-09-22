@@ -20,10 +20,10 @@ function() {
     };
 
     config.db2 = {
-      username: karate.properties['test.nbsinterfaceusername'],
-      password: karate.properties['test.nbsinterfacepwd'],
+      username: karate.properties['test.username'],
+      password: karate.properties['test.password'],
       url: karate.properties['test.nbsdburl'],
-      driverClassName: karate.properties['test.nbsdriverclsName']
+      driverClassName: karate.properties['test.driverClassName']
     };
     config.apiurl = karate.properties['test.apiurl'];
     config.bootstrapServers = karate.properties['test.bootstrapServers'];
