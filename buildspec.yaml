@@ -26,13 +26,14 @@ phases:
         TEST_API_URL=$(echo $TEST_SECRET | jq -r .APIURL | sed 's/\\//g') 
         TEST_USERNAME=$(echo $TEST_SECRET | jq -r .username)
         TEST_PASSWORD=$(echo $TEST_SECRET | jq -r .password)
-        TEST_URL=$(echo $TEST_SECRET | jq -r .DATAINGEST_SERVER_URL | sed 's/\\//g') 
+        TEST_URL=$(echo $TEST_SECRET | jq -r .url | sed 's/\\//g') 
         TEST_BOOTSTRAP_SERVERS=$(echo $TEST_SECRET | jq -r .KAFKA_SERVER | sed 's/\\//g') 
         TEST_GROUP_ID=$(echo $TEST_SECRET | jq -r .GROUPID)
         TEST_API_USERNAME=$(echo $TEST_SECRET | jq -r .API_USERNAME)
         TEST_API_PASSWORD=$(echo $TEST_SECRET | jq -r .API_PASSWORD)
-        TEST_NBS_URL=$(echo $TEST_SECRET | jq -r .NBS_URL | sed 's/\\//g') 
+        TEST_NBSURL=$(echo $TEST_SECRET | jq -r .NBSURL | sed 's/\\//g') 
         TEST_WRONGAPIURL=$(echo $TEST_SECRET | jq -r .WRONGAPIURL | sed 's/\\//g') 
+        TEST_nbsdburl=$(echo $TEST_SECRET | jq -r .nbsdburl | sed 's/\\//g') 
         TEST_DRIVERCLASSNAME=$DRIVERCLASSNAME
         TEST_KARATE_READTIMEOUT=$KARATE_READTIMEOUT
         TEST_KARATE_RETRYCOUNT=$KARATE_RETRYCOUNT
@@ -57,8 +58,9 @@ phases:
         -Dtest.groupId="$TEST_GROUP_ID" \
         -Dtest.apiusername="$TEST_API_USERNAME" \
         -Dtest.apipassword="$TEST_API_PASSWORD" \
-        -Dtest.nbsurl="$TEST_NBS_URL" \
-        -Dtest.wrongapiurl="$TEST_WRONGAPIURL"
+        -Dtest.nbsurl="$TEST_NBSURL" \
+        -Dtest.wrongapiurl="$TEST_WRONGAPIURL"\
+        -Dtest.nbsdburl="$TEST_nbsdburl"
 
 cache:
   paths:

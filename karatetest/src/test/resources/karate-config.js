@@ -22,7 +22,7 @@ function() {
     config.db2 = {
       username: karate.properties['test.username'],
       password: karate.properties['test.password'],
-      url: karate.properties['test.nbsdburl'],
+      nbsdburl: karate.properties['test.nbsdburl'],
       driverClassName: karate.properties['test.driverClassName']
     };
     config.apiurl = karate.properties['test.apiurl'];
