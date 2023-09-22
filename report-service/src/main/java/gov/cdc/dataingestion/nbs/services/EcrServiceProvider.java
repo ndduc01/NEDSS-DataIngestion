@@ -14,17 +14,19 @@ import  java.time.ZonedDateTime;
 import  java.time.ZoneOffset;
 import	java.util.Calendar;
 import	java.util.TimeZone;
+import	java.util.UUID;
+
 import	java.sql.Timestamp;
 
 @Service
 @AllArgsConstructor
-public class NbsRepositoryServiceProvider {
-	private static Logger log = LoggerFactory.getLogger(NbsRepositoryServiceProvider.class);
+public class EcrServiceProvider {
+	private static Logger log = LoggerFactory.getLogger(EcrServiceProvider.class);
 
 	private static String IMPEXP_CD = "I";
-	private static String STATUS_UNPROCESSED = "QUEUED";
-	private static String SYSTEM_NAME_NBS = "NBS";
-	private static String DOCUMENT_TYPE_CODE = "11648804";
+	private static String STATUS_UNPROCESSED = "ORIG_QUEUED";
+	private static String SYSTEM_NAME_NBS = "NEDSS-Modernization";
+	private static String DOCUMENT_TYPE_CODE = "PHC236";
 	private static String FILLER_ORDER_NBR = "HL7EntityIdentifier";
 	private static String LAB_CLIA = "HL7UniversalID";
 	private static String ORDER_TEST_CODE = "HL7AlternateIdentifier";
@@ -32,12 +34,15 @@ public class NbsRepositoryServiceProvider {
     @Autowired
     private NbsInterfaceRepository nbsInterfaceRepo;
     
-    public boolean saveXmlMessage(String msgId, String xmlMsg) {
+    public String saveEcrXmlMessage(String msgType, String xmlMsg) {
 		NbsInterfaceModel item = new NbsInterfaceModel();
+		String msgId = UUID.randomUUID().toString();
 
-		log.debug("{} : Xml being persisted to NBS Legacy database", msgId);
+		String xmlPayload = xmlMsg + " <!-- raw_message_id = " + msgId + " -->";
 
-		item.setPayload(xmlMsg);
+		log.info("{} : ECR xml being persisted to NBS Legacy database", msgId);
+
+		item.setPayload(xmlPayload);
 		item.setImpExpIndCd(IMPEXP_CD);
 		item.setRecordStatusCd(STATUS_UNPROCESSED);
 
@@ -48,18 +53,18 @@ public class NbsRepositoryServiceProvider {
 
 		item.setSystemNm(SYSTEM_NAME_NBS);
 		item.setDocTypeCd(DOCUMENT_TYPE_CODE);
-		item.setOriginalPayload(null);
+		item.setOriginalPayload(xmlMsg);
 		item.setOriginalDocTypeCd(null);
-		item.setFillerOrderNbr(FILLER_ORDER_NBR);
-		item.setLabClia(LAB_CLIA);
+		//item.setFillerOrderNbr(FILLER_ORDER_NBR);
+		//item.setLabClia(LAB_CLIA);
 		item.setSpecimenCollDate(null);
-		item.setOrderTestCode(ORDER_TEST_CODE);
+		//item.setOrderTestCode(ORDER_TEST_CODE);
 		item.setObservationUid(null);
 
     	nbsInterfaceRepo.save(item);
-		log.debug("{} : Persisted xml to nbs database", msgId);
+		log.info("{} : Persisted ECR xml to nbs database", msgId);
 
-    	return true;
+    	return msgId;
     }
 
 	private long getGmtTimestamp() {
