@@ -37,7 +37,7 @@ function() {
 }
 """
 
-  @regressionu
+  @smoke
   Scenario Outline: post a hl7 message and validate if XML record is generated  for that record and also its validated against XSD.
     * def hl7Message = data
     * def modifiedmsg = hl7Message.replace(oldfirstname, randomFirstName)
@@ -66,7 +66,7 @@ function() {
     * match resultxsd == true
     * def finalstatusupdated = call pollForDbStatus {}
     * assert finalstatusupdated == 'Success'
-    # comment3
+    # comment4
 
 
 
