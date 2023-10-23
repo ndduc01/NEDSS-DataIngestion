@@ -29,10 +29,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class SFTPRouteBuilderTest  extends CamelTestSupport {
 
-//    @Mock
-//    private HL7FileProcessor hl7FileProcessor;
-//    @MockBean
-//HL7FileProcessComponent hL7FileProcessComponent;
     @Override
     public boolean isUseAdviceWith() {
         return true;
@@ -53,20 +49,17 @@ class SFTPRouteBuilderTest  extends CamelTestSupport {
                 new AdviceWithRouteBuilder() {
                     @Override
                     public void configure() throws Exception {
-                        replaceFromWith("direct:start1");
-                        weaveByToUri("bean:hL7FileProcessComponent*").replace().to("mock:end2");
+                        replaceFromWith("direct:fromSftpRoute");
+                        weaveByToUri("bean:hL7FileProcessComponent*").replace().to("mock:result");
                         //weaveAddLast().to("mock:end2");
-
                     }
                 });
-        //context.start();
-        //context.getRoute("direct:start1").setProcessor(hl7FileProcessor);
         context.start();
 
-        MockEndpoint mock = getMockEndpoint("mock:end2");
+        MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(1);
 
-        template.sendBody("direct:start1", "Unit testing for bean");
+        template.sendBody("direct:fromSftpRoute", "Unit testing for bean");
 
         mock.assertIsSatisfied();
     }
