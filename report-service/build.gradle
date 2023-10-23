@@ -160,6 +160,7 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testImplementation 'org.apache.camel:camel-test-spring-junit5:4.0.0'
+	implementation group: 'org.apache.camel', name: 'camel-xml-jaxb', version: '4.0.0'
 
 	runtimeOnly 'org.springframework.boot:spring-boot-devtools'
 
