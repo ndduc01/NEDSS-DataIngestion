@@ -22,12 +22,6 @@ public class SFTPRouteBuilder extends RouteBuilder {
     @Value("${sftp.directory}")
     private String sftpDirectory;
 
-   // @Autowired
-   // private HL7FileProcessor hl7FileProcessor;
-
-//    @Autowired
-//    HL7FileProcessComponent hL7FileProcessComponent;
-
     @Override
     public void configure() throws Exception {
         //shutdown faster in case of in-flight messages stack up
@@ -37,32 +31,22 @@ public class SFTPRouteBuilder extends RouteBuilder {
             sftpDirectory = "/" + sftpDirectory;
         }
         String ftp_server = "sftp://" + sftpHost + ":" + sftpPort + sftpDirectory + "?autoCreate=true&username=" + sftpUserName +
-                "&password=" + sftpPassword + "&passiveMode=true&binary=true" +
+                "&password=" + sftpPassword + "&passiveMode=true&binary=true&recursive=true" +
                 "&localWorkDirectory=files/download" +
                 "&delay=5000&noop=true&delete=true";
-
+        //ignoreFileNotFoundOrPermissionError
+        //excludeExt=bak,da
         log.debug("sftp_server URL:" + ftp_server);
         System.out.println("sftp_server URL:" + ftp_server);
         //# for the server we want to delay 5 seconds between polling the server
         //# and keep the downloaded file as-is
-        try {
-//            from(ftp_server).routeId("sftpRouteId")
-//                    .log("The file ${file:name} content from sftp server is ${body}")
-//                    .setHeader("msgType", constant("HL7"))
-//                    .setHeader("validationActive", constant("false"))
-//                    .process(hl7FileProcessor);
-                   // .end();
-//            from(ftp_server).routeId("sftpRouteId")
-//                    .log("The file ${file:name} content from sftp server is ${body}");
-                    //.to("mock:end1");
-            //////////////
+
             from(ftp_server).routeId("sftpRouteId")
                     .log("The file ${file:name} content from sftp server is ${body}")
-                    .to("bean:hL7FileProcessComponent");
+                    ///validation
+                    .to("bean:hL7FileProcessComponent")
+                    .end();
 
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-        }
     }
     @Bean
     public HL7FileProcessComponent hL7FileProcessComponent() {

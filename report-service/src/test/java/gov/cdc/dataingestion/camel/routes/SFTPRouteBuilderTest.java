@@ -25,9 +25,13 @@ import org.springframework.test.annotation.DirtiesContext;
 
 import static org.apache.camel.builder.AdviceWith.adviceWith;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
 
 
-class SFTPRouteBuilderTest  extends CamelTestSupport {
+class SFTPRouteBuilderTest extends CamelTestSupport {
+
+    @MockBean
+    private HL7FileProcessComponent hL7FileProcessComponent;
 
     @Override
     public boolean isUseAdviceWith() {
@@ -42,7 +46,6 @@ class SFTPRouteBuilderTest  extends CamelTestSupport {
     @Test
     public void testMockEndpoints() throws Exception {
         RouteDefinition route = context.getRouteDefinition("sftpRouteId");
-
         adviceWith(
                 route,
                 context,
@@ -51,16 +54,13 @@ class SFTPRouteBuilderTest  extends CamelTestSupport {
                     public void configure() throws Exception {
                         replaceFromWith("direct:fromSftpRoute");
                         weaveByToUri("bean:hL7FileProcessComponent*").replace().to("mock:result");
-                        //weaveAddLast().to("mock:end2");
                     }
                 });
         context.start();
 
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(1);
-
-        template.sendBody("direct:fromSftpRoute", "Unit testing for bean");
-
+        template.sendBody("direct:fromSftpRoute", "HL7 Test message from SFTP Route");
         mock.assertIsSatisfied();
     }
 }

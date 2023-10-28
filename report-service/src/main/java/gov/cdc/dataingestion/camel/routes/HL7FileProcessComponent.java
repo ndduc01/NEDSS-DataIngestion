@@ -8,23 +8,20 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
-@Component
+@Service
 public class HL7FileProcessComponent {
     private static Logger logger = LoggerFactory.getLogger(HL7FileProcessComponent.class);
-
+    String msgType = "HL7";
+    String validationActive = "false";
     @Autowired
     private RawELRService rawELRService;
 
-
-    public void process(String body) throws Exception {
+    public String process(String body) throws Exception {
+        String elrId="";
         try {
-//            String msgType = (String) exchange.getIn().getHeader("msgType");
-//            String validationActive = (String) exchange.getIn().getHeader("validationActive");
-//            String hl7Str = exchange.getIn().getBody(String.class);
-            System.out.println("*****Inside HL7FileProcessComponent*****");
-            String msgType = "HL7";
-            String validationActive = "false";//(String) exchange.getIn().getHeader("validationActive");
+            System.out.println("*****Inside1 HL7FileProcessComponent*****");
             String hl7Str = body;
 
             logger.info("Message type:{}",msgType);
@@ -33,14 +30,13 @@ public class HL7FileProcessComponent {
 
             RawERLDto rawERLDto = new RawERLDto();
             rawERLDto.setType(msgType);
+            rawERLDto.setValidationActive(false);
             rawERLDto.setPayload(hl7Str);
-            if (validationActive != null && validationActive.equalsIgnoreCase("true")) {
-                rawERLDto.setValidationActive(true);
-            }
-            rawELRService.submission(rawERLDto);
+            elrId= rawELRService.submission(rawERLDto);
         }
         catch(Exception e) {
             logger.error(e.getMessage());
         }
+        return elrId;
     }
 }
