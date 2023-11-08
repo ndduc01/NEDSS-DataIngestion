@@ -1,12 +1,10 @@
 package gov.cdc.dataingestion.camel.routes;
 
-import org.apache.camel.FailedToStartRouteException;
-import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.dataformat.zipfile.ZipSplitter;
 import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -55,30 +53,40 @@ public class SFTPRouteBuilder extends RouteBuilder {
                 .addParameter("recursive","true")
                 .addParameter("maximumReconnectAttempts","2")
                 .addParameter("reconnectDelay","5000")
+                .addParameter("excludeExt","bak,da")
+                .addParameter("includeExt","txt,TXT,zip,ZIP")
                 .build();
-        //ignoreFileNotFoundOrPermissionError
-        //excludeExt=bak,da
+
         String sftp_server=fromSftpUrl.toString();
         log.debug("sftp_server URL:" + sftp_server);
-        System.out.println("sftp_server URL:" + sftp_server);
         //# for the server we want to delay 5 seconds between polling the server
         //# and keep the downloaded file as-is
-//        onException(Exception.class)
-//                .log("Exception sftpRouteBuilder: ${exception}")
-//                .handled(true);
-//        onException(RuntimeCamelException.class)
-//                .log("RuntimeCamelException sftpRouteBuilder: ${exception}")
-//                .handled(true);
-        System.out.println("fromSFtpUrl:"+sftp_server);
-            from(sftp_server).routeId("sftpRouteId")
-                    .log("The file ${file:name} content from sftp server is ${body}")
-                    ///validation
-                    .to("bean:hL7FileProcessComponent")
-                    .end();
 
-            //////
+        log.debug("Calling sftpRouteId");
+        from(sftp_server).routeId("sftpRouteId")
+                .log("The file from sftpRouteId: ${file:name}")
+                .choice()
+                    .when(simple("${file:name} endsWith '.zip'"))
+                        .log(" when .zip condition...The file ${file:name}")
+                        .to("file:files/sftpdownload")
+                    .otherwise()
+                        .log(" Otherwise condition for txt files ...The file ${file:name} content from sftp server is ${body}")
+                        .to("bean:hL7FileProcessComponent")
+                .end();
 
-        ////////////
+        log.debug("Calling unzipfileRouteId");
+        from("file:files/sftpdownload")
+                .routeId("unzipfileRouteId")
+                .split(new ZipSplitter()).streaming()
+                .to("file:files/sftpdownloadUnzip")
+                .end();
+
+        log.debug("Calling sftpdownloadUnzip");
+        from("file:files/sftpdownloadUnzip?includeExt=txt")
+                .routeId("ReadFromUnzipDirRouteId")
+                .log(" Read from unzipped files folder ...The file ${file:name}")
+                .to("bean:hL7FileProcessComponent")
+                .end();
     }
     @Bean
     public HL7FileProcessComponent hL7FileProcessComponent() {

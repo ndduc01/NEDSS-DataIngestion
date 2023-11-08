@@ -123,12 +123,13 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'org.apache.xmlbeans:xmlbeans:2.6.0'
 	implementation 'org.apache.camel.springboot:camel-spring-boot-starter:4.0.0'
-	implementation group: 'org.apache.camel', name: 'camel-ftp', version: '4.0.0'
-	implementation group: 'org.apache.camel', name: 'camel-aws2-s3', version: '4.0.0'
-	implementation group: 'org.apache.camel', name: 'camel-endpointdsl', version: '4.0.0'
-	implementation group: 'com.amazonaws', name: 'aws-java-sdk-s3', version: '1.12.547'
+	implementation 'org.apache.camel:camel-ftp:4.0.0'
+	implementation 'org.apache.camel:camel-aws2-s3:4.0.0'
+	implementation 'org.apache.camel:camel-endpointdsl:4.0.0'
+	implementation 'org.apache.camel.springboot:camel-file-starter:4.0.0'
+	implementation 'org.apache.camel.springboot:camel-zipfile-starter:4.0.0'
+	implementation 'com.amazonaws:aws-java-sdk-s3:1.12.582'
 	implementation 'com.amazonaws:aws-java-sdk-sts:1.12.580'
-	implementation 'org.apache.camel:camel-openapi-java:4.0.0'
 
 	// DI HL7 Wrapper
 	if (findProject(':hl7-parser')) {
