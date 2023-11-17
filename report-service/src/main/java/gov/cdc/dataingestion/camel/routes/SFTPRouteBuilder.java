@@ -5,6 +5,7 @@ import org.apache.camel.dataformat.zipfile.ZipSplitter;
 import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -27,6 +28,8 @@ public class SFTPRouteBuilder extends RouteBuilder {
     @Value("${sftp.directory}")
     private String sftpDirectory;
 
+    @Autowired
+    private HL7FileProcessComponent hL7FileProcessComponent;
     @Override
     public void configure() throws Exception {
         //shutdown faster in case of in-flight messages stack up
@@ -63,6 +66,8 @@ public class SFTPRouteBuilder extends RouteBuilder {
         //# and keep the downloaded file as-is
 
         log.debug("Calling sftpRouteId");
+        //Download the file from sftp server.If the file is zip, it will be downloaded into files/sftpdownload directory.
+        //If it's a text file, it will be processed.
         from(sftp_server).routeId("sftpRouteId")
                 .log("The file from sftpRouteId: ${file:name}")
                 .choice()
@@ -73,24 +78,21 @@ public class SFTPRouteBuilder extends RouteBuilder {
                         .log(" Otherwise condition for txt files ...The file ${file:name} content from sftp server is ${body}")
                         .to("bean:hL7FileProcessComponent")
                 .end();
-
-        log.debug("Calling unzipfileRouteId");
+        // Unzip the downloaded file
+        log.debug("Calling sftpUnzipFileRouteId");
         from("file:files/sftpdownload")
-                .routeId("unzipfileRouteId")
+                .routeId("sftpUnzipFileRouteId")
                 .split(new ZipSplitter()).streaming()
-                .to("file:files/sftpdownloadUnzip")
+                .to("file:files/sftpUnzipDownload")
                 .end();
 
+        //Process the files from unzipped folder
         log.debug("Calling sftpdownloadUnzip");
-        from("file:files/sftpdownloadUnzip?includeExt=txt")
-                .routeId("ReadFromUnzipDirRouteId")
+        from("file:files/sftpUnzipDownload?includeExt=txt")
+                .routeId("SftpReadFromUnzipDirRouteId")
                 .log(" Read from unzipped files folder ...The file ${file:name}")
                 .to("bean:hL7FileProcessComponent")
                 .end();
     }
-    @Bean
-    public HL7FileProcessComponent hL7FileProcessComponent() {
-        return new HL7FileProcessComponent();
-    }
-}
+ }
 

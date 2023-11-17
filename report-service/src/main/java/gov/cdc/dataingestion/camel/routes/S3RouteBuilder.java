@@ -1,34 +1,16 @@
 package gov.cdc.dataingestion.camel.routes;
 
-import com.amazonaws.services.s3.AmazonS3Client;
+import org.apache.camel.Exchange;
 import org.apache.camel.FailedToStartRouteException;
 import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.builder.endpoint.EndpointRouteBuilder;
-import org.apache.camel.main.Main;
-import org.apache.camel.support.SimpleRegistry;
+import org.apache.camel.component.aws2.s3.AWS2S3Constants;
+import org.apache.camel.dataformat.zipfile.ZipSplitter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.SdkClientException;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicSessionCredentials;
-import com.amazonaws.auth.profile.ProfileCredentialsProvider;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.ObjectListing;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
-import com.amazonaws.services.securitytoken.model.AssumeRoleRequest;
-import com.amazonaws.services.securitytoken.model.AssumeRoleResult;
-import com.amazonaws.services.securitytoken.model.Credentials;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.s3.S3Client;
 
 @Component
 @ConditionalOnProperty(name = "di.camel.s3-endpoint.enabled", havingValue = "true")
@@ -37,12 +19,6 @@ public class S3RouteBuilder extends EndpointRouteBuilder {
 
     @Autowired
     private HL7FileProcessComponent hL7FileProcessComponent;
-
-    @Autowired
-    AmazonS3 amazonS3Client;
-//    @Autowired
-//    private HL7FileProcessor hL7FileProcessor;
-// mainObj=new Main();
 
     @Override
     public void configure() throws Exception {
@@ -55,43 +31,34 @@ public class S3RouteBuilder extends EndpointRouteBuilder {
                 handled(true)
                 .log("RuntimeCamelException s3RouteBuilder: ${exception}");
         System.out.println("************ calling S3RouteBuilder *********");
-        System.out.println("amazonS3Client:"+amazonS3Client);
-       // S3Client s3Client= s3Client();
-        //AmazonS3 s3Client= s3Client();
-       // mainObj.bind("s3Client",s3Client);
-//            from(aws2S3("di-manual-file-dropoff").delay(1000L)
-//                    .useDefaultCredentialsProvider(true).deleteAfterRead(true)).routeId("s3diRouteId")
-//                    .log("The file content from s3 is ${body}")
-//                    .setHeader("msgType", constant("HL7"))
-//                    .setHeader("validationActive", constant("false"))
-//                    .process(hL7FileProcessor)
-//                    .end();
 
-//        from(aws2S3("di-manual-file-dropoff").delay(1000L)
-//                .useDefaultCredentialsProvider(true).deleteAfterRead(true)).routeId("s3diRouteId")
-//                .log("The file content from s3 is ${body}")
-//                // .setHeader("msgType", constant("HL7"))
-//                // .setHeader("validationActive", constant("false"))
-//                .to("bean:hL7FileProcessComponent")
-//                .end();
-//        from(aws2S3("di-manual-file-dropoff?amazonS3Client=#s3Client").delay(1000L)
-//                .deleteAfterRead(true)).routeId("s3diRouteId")
-//                .log("The file content from s3 is ${body}")
-//                // .setHeader("msgType", constant("HL7"))
-//                // .setHeader("validationActive", constant("false"))
-//               // .to("bean:hL7FileProcessComponent")
-//                .end();
-        from("aws2-s3://di-manual-file-dropoff?amazonS3Client=#amazonS3Client&deleteAfterRead=true")//&moveAfterRead=true&destinationBucket=myothercamelbucket&destinationBucketPrefix=RAW(pre-)&destinationBucketSuffix=RAW(-suff)")
-                .routeId("s3diRouteId")//.onException(Exception.class).handled(true).end()
-                .log("The file content from s3 is ${body}")
+        from(aws2S3("di-manual-file-dropoff").delay(1000L)
+                .useDefaultCredentialsProvider(true).deleteAfterRead(true)).routeId("s3diRouteId")
+                .log("S3 file name:${header.CamelAwsS3Key}")
+                //.log("S3 header:${headers}")
+                .choice()
+                .when(simple("${header.CamelAwsS3Key} endsWith '.zip'"))
+                .log(" when .zip condition...The file name: ${header.CamelAwsS3Key}")
+                .to("file:files/s3download")
+                .otherwise()
+                .log(" Otherwise condition for txt files ...The file ${header.CamelAwsS3Key}")
+                .to("bean:hL7FileProcessComponent")
+                .end();
+        // Unzip the downloaded file
+        log.debug("Calling s3UnzipFileRouteId");
+        from("file:files/s3download")
+                .routeId("s3UnzipFileRouteId")
+                //.log("file type: ${headers}")
+                .split(new ZipSplitter()).streaming()
+                .to("file:files/s3UnzipDownload")
                 .end();
 
-
-
+        //Process the files from unzipped folder
+        log.debug("Calling s3downloadUnzip");
+        from("file:files/s3UnzipDownload?includeExt=txt")
+                .routeId("s3ReadFromUnzipDirRouteId")
+                .log(" Read from unzipped files folder ...The file ${file:name}")
+                .to("bean:hL7FileProcessComponent")
+                .end();
     }
-
-//    private S3Client getS3Client1(){
-//        S3Client s3Client = S3Client.builder().credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(awsBucketAccessKey, awsBucketSecretKey)))
-//                .region(Region.US_EAST_1).build();
-//    }
 }

@@ -23,6 +23,8 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.test.annotation.DirtiesContext;
 
+import java.io.File;
+
 import static org.apache.camel.builder.AdviceWith.adviceWith;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
@@ -46,6 +48,9 @@ class SFTPRouteBuilderTest extends CamelTestSupport {
     @Test
     public void testMockEndpoints() throws Exception {
         RouteDefinition route = context.getRouteDefinition("sftpRouteId");
+        RouteDefinition routeSftpUnzipFile = context.getRouteDefinition("sftpUnzipFileRouteId");
+        RouteDefinition routeSftpReadFromUnzipDir = context.getRouteDefinition("SftpReadFromUnzipDirRouteId");
+
         adviceWith(
                 route,
                 context,
@@ -56,11 +61,42 @@ class SFTPRouteBuilderTest extends CamelTestSupport {
                         weaveByToUri("bean:hL7FileProcessComponent*").replace().to("mock:result");
                     }
                 });
+        adviceWith(
+                routeSftpUnzipFile,
+                context,
+                new AdviceWithRouteBuilder() {
+                    @Override
+                    public void configure() throws Exception {
+                        replaceFromWith("direct:sftpUnzipFileRoute");
+                        weaveByToUri("file:files/sftpUnzipDownload").replace().to("mock:sftpUnzipFileResult");
+                    }
+                });
+        adviceWith(
+                routeSftpReadFromUnzipDir,
+                context,
+                new AdviceWithRouteBuilder() {
+                    @Override
+                    public void configure() throws Exception {
+                        replaceFromWith("direct:sftpReadFromUnzipDirRoute");
+                        weaveByToUri("bean:hL7FileProcessComponent*").replace().to("mock:sftpReadFromUnzippedFilesResult");
+                    }
+                });
         context.start();
 
+        //For sftpRouteId
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(1);
         template.sendBody("direct:fromSftpRoute", "HL7 Test message from SFTP Route");
         mock.assertIsSatisfied();
+        //For sftpUnzipFileRouteId
+        MockEndpoint mockSftpUnzipFile = getMockEndpoint("mock:sftpUnzipFileResult");
+        mockSftpUnzipFile.expectedMinimumMessageCount(4);
+        template.sendBody("direct:sftpUnzipFileRoute", new File("src/test/resources/hl7testdata.zip"));
+        mockSftpUnzipFile.assertIsSatisfied();
+        ////
+        MockEndpoint mockSftpReadFromUnzippedFiles = getMockEndpoint("mock:sftpReadFromUnzippedFilesResult");
+        mockSftpReadFromUnzippedFiles.expectedMessageCount(1);
+        template.sendBody("direct:sftpReadFromUnzipDirRoute", "HL7 Test message from SFTP Route");
+        mockSftpReadFromUnzippedFiles.assertIsSatisfied();
     }
 }
