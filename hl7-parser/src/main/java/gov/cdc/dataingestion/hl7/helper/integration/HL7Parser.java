@@ -28,7 +28,7 @@ public class HL7Parser implements IHL7Parser {
     private HapiContext context;
     private final String newLine = "\n";
     private final String newLineWithCarrier = "\n\r";
-    private final String carrier = "\r";
+    private final String carrier = "\n";
 
     // this is the support hl7 structure
     private final String supportedHL7version = "2.5.1";
@@ -41,10 +41,10 @@ public class HL7Parser implements IHL7Parser {
     }
 
     public String processFhsMessage(String message) {
-        message = message.replaceAll("FHS[^\\r]*\\r?", "");
-        message = message.replaceAll("BHS[^\\r]*\\r?", "");
-        message = message.replaceAll("BTS[^\\r]*\\r?", "");
-        message = message.replaceAll("FTS[^\\r]*\\r?", "");
+        message = message.replaceAll("FHS[^\\n]*\\n?", "");
+        message = message.replaceAll("BHS[^\\n]*\\n?", "");
+        message = message.replaceAll("BTS[^\\n]*\\n?", "");
+        message = message.replaceAll("FTS[^\\n]*\\n?", "");
 
 
         return message;
