@@ -2,6 +2,8 @@ package gov.cdc.dataingestion.deadletter.controller;
 
 import gov.cdc.dataingestion.deadletter.model.ElrDeadLetterDto;
 import gov.cdc.dataingestion.deadletter.service.ElrDeadLetterService;
+import gov.cdc.dataingestion.email_notification.service.JavaEmailService;
+import gov.cdc.dataingestion.email_notification.service.SesEmailService;
 import gov.cdc.dataingestion.exception.DeadLetterTopicException;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -17,13 +19,16 @@ import java.util.List;
 public class ElrDeadLetterController {
 
     private final ElrDeadLetterService elrDeadLetterService;
-
+    private final SesEmailService sesEmailService;
+    private final JavaEmailService javaEmailService;
     @Operation(
             summary = "Get all dead letter messages",
             description = "Get all dead letter messages",
             tags = { "dataingestion", "deadletter" })
     @GetMapping(path = "/get-error-messages")
     public ResponseEntity<List<ElrDeadLetterDto>> getAllNewErrorMessage() {
+        // sesEmailService.sendEmailNotificationForDlt("Body", "Test");
+        javaEmailService.sendEmail("ndduc04@gmail.com", "test", "test");
         return ResponseEntity.ok(elrDeadLetterService.getAllErrorDltRecord());
     }
 
