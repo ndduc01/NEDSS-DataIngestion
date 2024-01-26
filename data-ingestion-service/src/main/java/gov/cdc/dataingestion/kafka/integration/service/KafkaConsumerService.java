@@ -49,10 +49,10 @@ import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.sql.Timestamp;
-import java.time.ZonedDateTime;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import static gov.cdc.dataingestion.share.helper.TimeStampHelper.getCurrentTimeStamp;
 
@@ -109,6 +109,7 @@ public class KafkaConsumerService {
     private String topicDebugLog = "Received message ID: {} from topic: {}";
     private String processDltErrorMessage = "Raw data not found; id: ";
     //endregion
+
 
     //region CONSTRUCTOR
     public KafkaConsumerService(
@@ -233,35 +234,12 @@ public class KafkaConsumerService {
     /**
      * XML Conversion
      * */
-    @RetryableTopic(
-            attempts = "${kafka.consumer.max-retry}",
-            autoCreateTopics = "false",
-            dltStrategy = DltStrategy.FAIL_ON_ERROR,
-            retryTopicSuffix = "${kafka.retry.suffix}",
-            dltTopicSuffix = "${kafka.dlt.suffix}",
-            // retry topic name, such as topic-retry-1, topic-retry-2, etc
-            topicSuffixingStrategy = TopicSuffixingStrategy.SUFFIX_WITH_INDEX_VALUE,
-            // time to wait before attempting to retry
-            backoff = @Backoff(delay = 1000, multiplier = 2.0),
-            // if these exceptions occur, skip retry then push message to DLQ
-            exclude = {
-                    SerializationException.class,
-                    DeserializationException.class,
-                    DuplicateHL7FileFoundException.class,
-                    DiHL7Exception.class,
-                    HL7Exception.class,
-                    XmlConversionException.class,
-                    JAXBException.class
-            }
-    )
     @KafkaListener(topics = "${kafka.xml-conversion-prep.topic}")
     public void handleMessageForXmlConversionElr(String message,
                                                  @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
-                                                 @Header(KafkaHeaderValue.MESSAGE_OPERATION) String operation) throws Exception {
+                                                 @Header(KafkaHeaderValue.MESSAGE_OPERATION) String operation)  {
         log.debug(topicDebugLog, message, topic);
-        customMetricsBuilder.incrementXmlConversionRequested();
         xmlConversionHandler(message, operation);
-
     }
 
     /**
@@ -335,6 +313,18 @@ public class KafkaConsumerService {
                 , result.getMsgContainer().getDataMigrationStatus(), xmlResult);
     }
 
+    @KafkaListener(
+            topics = "xml_prep_dlt_manual"
+    )
+    public void handleDltManual(
+            String message,
+            @Header(KafkaHeaders.EXCEPTION_STACKTRACE) String stacktrace,
+            @Header(KafkaHeaderValue.DLT_OCCURRENCE) String dltOccurrence,
+            @Header(KafkaHeaderValue.ORIGINAL_TOPIC) String originalTopic
+    ) {
+        shareProcessingDlt(dltOccurrence, originalTopic, message, stacktrace);
+    }
+
     //region DLT HANDLER
     @DltHandler
     public void handleDlt(
@@ -345,7 +335,11 @@ public class KafkaConsumerService {
             @Header(KafkaHeaderValue.DLT_OCCURRENCE) String dltOccurrence,
             @Header(KafkaHeaderValue.ORIGINAL_TOPIC) String originalTopic
     ) {
-        log.debug("Message ID: {} handled by dlq topic: {}", message, topic);
+        shareProcessingDlt(dltOccurrence, originalTopic, message, stacktrace);
+    }
+    //endregion
+
+    private void shareProcessingDlt(String dltOccurrence, String originalTopic, String message, String stacktrace) {
 
         // increase by 1, indicate the dlt had been occurred
         Integer dltCount = Integer.parseInt(dltOccurrence) + 1;
@@ -362,7 +356,6 @@ public class KafkaConsumerService {
         );
         processingDltRecord(elrDeadLetterDto);
     }
-    //endregion
 
     //region PRIVATE METHOD
     private void processingDltRecord(ElrDeadLetterDto elrDeadLetterDto) {
@@ -435,53 +428,79 @@ public class KafkaConsumerService {
             throw new ConversionPrepareException("Validation ELR Record Not Found");
         }
     }
-    private void xmlConversionHandler(String message, String operation) throws XmlConversionException, DiHL7Exception, JAXBException, IOException {
-        log.debug("Received message id will be retrieved from db and associated hl7 will be converted to xml");
+    private void xmlConversionHandler(String message, String operation) {
 
-        String hl7Msg = "";
-        if (operation.equalsIgnoreCase(EnumKafkaOperation.INJECTION.name())) {
-            Optional<ValidatedELRModel> validatedElrResponse = this.iValidatedELRRepository.findById(message);
-            hl7Msg = validatedElrResponse.get().getRawMessage();
-        } else {
-            Optional<ElrDeadLetterModel> response = this.elrDeadLetterRepository.findById(message);
-            if (response.isPresent()) {
-                var validMessage = iHl7v2Validator.messageStringValidation(response.get().getMessage());
-                validMessage = iHl7v2Validator.processFhsMessage(validMessage);
-                hl7Msg = validMessage;
-            } else {
-                throw new XmlConversionException(errorDltMessage);
+        // Update: changed method to async process, intensive process in this method cause consumer lagging, delay and strange behavior
+        // TODO: considering breaking down this logic (NOTE) //NOSONAR
+        // PROCESS as follow:
+        //  - HL7 -> XML
+                // xml conversion can be broke down into multiple smaller pipeline
+        //  - Saving record to status table can also be broke to downstream pipeline
+        CompletableFuture.runAsync(() -> {
+            log.debug("Received message id will be retrieved from db and associated hl7 will be converted to xml");
+
+            String hl7Msg = "";
+            try {
+                if (operation.equalsIgnoreCase(EnumKafkaOperation.INJECTION.name())) {
+                    Optional<ValidatedELRModel> validatedElrResponse = this.iValidatedELRRepository.findById(message);
+                    hl7Msg = validatedElrResponse.map(ValidatedELRModel::getRawMessage).orElse("");
+                } else {
+                    Optional<ElrDeadLetterModel> response = this.elrDeadLetterRepository.findById(message);
+                    if (response.isPresent()) {
+                        var validMessage = iHl7v2Validator.messageStringValidation(response.get().getMessage());
+                        validMessage = iHl7v2Validator.processFhsMessage(validMessage);
+                        hl7Msg = validMessage;
+                    } else {
+                        throw new XmlConversionException(errorDltMessage);
+                    }
+                }
+                HL7ParsedMessage<OruR1> parsedMessage = Hl7ToRhapsodysXmlConverter.getInstance().parsedStringToHL7(hl7Msg);
+                String rhapsodyXml = Hl7ToRhapsodysXmlConverter.getInstance().convert(message, parsedMessage);
+
+                // Modified from debug ==> info to capture xml for analysis.
+                // Please leave below at "info" level for the time being, before going live,
+                // this will be changed to debug
+                log.info("rhapsodyXml: {}", rhapsodyXml);
+
+                NbsInterfaceModel nbsInterfaceModel = nbsRepositoryServiceProvider.saveXmlMessage(message, rhapsodyXml, parsedMessage);
+
+                customMetricsBuilder.incrementXmlConversionRequested();
+                // Once the XML is saved to the NBS_Interface table, we get the ID to save it
+                // in the Data Ingestion elr_record_status_id table, so that we can get the status
+                // of the record straight-forward from the NBS_Interface table.
+
+                if(nbsInterfaceModel == null) {
+                    customMetricsBuilder.incrementXmlConversionRequestedFailure();
+                }
+                else {
+                    customMetricsBuilder.incrementXmlConversionRequestedSuccess();
+                    ReportStatusIdData reportStatusIdData = new ReportStatusIdData();
+                    Optional<ValidatedELRModel> validatedELRModel = iValidatedELRRepository.findById(message);
+                    reportStatusIdData.setRawMessageId(validatedELRModel.get().getRawId());
+                    reportStatusIdData.setNbsInterfaceUid(nbsInterfaceModel.getNbsInterfaceUid());
+                    reportStatusIdData.setCreatedBy(convertedToXmlTopic);
+                    reportStatusIdData.setUpdatedBy(convertedToXmlTopic);
+
+                    var timestamp = getCurrentTimeStamp();
+                    reportStatusIdData.setCreatedOn(timestamp);
+                    reportStatusIdData.setUpdatedOn(timestamp);
+                    iReportStatusRepository.save(reportStatusIdData);
+                }
+
+                kafkaProducerService.sendMessageAfterConvertedToXml(rhapsodyXml, convertedToXmlTopic, 0);
+
+            } catch (Exception e) {
+                StringWriter sw = new StringWriter();
+                PrintWriter pw = new PrintWriter(sw);
+                e.printStackTrace(pw);
+                String stackTrace = sw.toString();
+                // Handle any exceptions here
+                kafkaProducerService.sendMessageDlt(
+                        message, "xml_prep_dlt_manual", 0 ,
+                        stackTrace,prepXmlTopic
+                );
             }
-        }
-        HL7ParsedMessage<OruR1> parsedMessage = Hl7ToRhapsodysXmlConverter.getInstance().parsedStringToHL7(hl7Msg);
-        String rhapsodyXml = Hl7ToRhapsodysXmlConverter.getInstance().convert(message, parsedMessage);
-
-        // Modified from debug ==> info to capture xml for analysis.
-        // Please leave below at "info" level for the time being, before going live,
-        // this will be changed to debug
-        log.info("rhapsodyXml: {}", rhapsodyXml);
-      
-        NbsInterfaceModel nbsInterfaceModel = nbsRepositoryServiceProvider.saveXmlMessage(message, rhapsodyXml, parsedMessage);
-        kafkaProducerService.sendMessageAfterConvertedToXml(rhapsodyXml, convertedToXmlTopic, 0);
-
-        // Once the XML is saved to the NBS_Interface table, we get the ID to save it
-        // in the Data Ingestion elr_record_status_id table, so that we can get the status
-        // of the record straight-forward from the NBS_Interface table.
-
-        if(nbsInterfaceModel == null) {
-            customMetricsBuilder.incrementXmlConversionRequestedFailure();
-        }
-        else {
-            customMetricsBuilder.incrementXmlConversionRequestedSuccess();
-            ReportStatusIdData reportStatusIdData = new ReportStatusIdData();
-            Optional<ValidatedELRModel> validatedELRModel = iValidatedELRRepository.findById(message);
-            reportStatusIdData.setRawMessageId(validatedELRModel.get().getRawId());
-            reportStatusIdData.setNbsInterfaceUid(nbsInterfaceModel.getNbsInterfaceUid());
-            reportStatusIdData.setCreatedBy(convertedToXmlTopic);
-            reportStatusIdData.setUpdatedBy(convertedToXmlTopic);
-            reportStatusIdData.setCreatedOn(getCurrentTimeStamp());
-            reportStatusIdData.setUpdatedOn(getCurrentTimeStamp());
-            iReportStatusRepository.save(reportStatusIdData);
-        }
+        });
     }
     private void validationHandler(String message, boolean hl7ValidationActivated) throws DuplicateHL7FileFoundException, DiHL7Exception {
         Optional<RawERLModel> rawElrResponse = this.iRawELRRepository.findById(message);

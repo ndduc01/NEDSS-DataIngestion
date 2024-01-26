@@ -1,5 +1,6 @@
 package gov.cdc.dataingestion.nbs.services;
 
+import gov.cdc.dataingestion.exception.XmlConversionException;
 import gov.cdc.dataingestion.hl7.helper.model.HL7ParsedMessage;
 import gov.cdc.dataingestion.hl7.helper.model.hl7.message_type.OruR1;
 import gov.cdc.dataingestion.nbs.repository.NbsInterfaceRepository;
@@ -10,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
@@ -64,7 +66,7 @@ public class NbsRepositoryServiceProvider {
 		}
 	}
     
-    public NbsInterfaceModel saveXmlMessage(String msgId, String xmlMsg, HL7ParsedMessage<OruR1> hl7ParsedMessage) {
+    public NbsInterfaceModel saveXmlMessage(String msgId, String xmlMsg, HL7ParsedMessage<OruR1> hl7ParsedMessage) throws XmlConversionException {
 		NbsInterfaceModel item = new NbsInterfaceModel();
 
 		log.debug("{} : Xml being persisted to NBS Legacy database", msgId);
@@ -101,7 +103,7 @@ public class NbsRepositoryServiceProvider {
     	return nbsInterfaceModel;
     }
 
-	private NbsInterfaceModel savingNbsInterfaceModelHelper(OruR1 oru, NbsInterfaceModel nbsInterface) {
+	private NbsInterfaceModel savingNbsInterfaceModelHelper(OruR1 oru, NbsInterfaceModel nbsInterface) throws XmlConversionException {
 		String labClia = (oru.getMessageHeader() != null && oru.getMessageHeader().getSendingFacility() != null)
 				? oru.getMessageHeader().getSendingFacility().getUniversalId() : null;
 
@@ -147,19 +149,36 @@ public class NbsRepositoryServiceProvider {
 		return nbsInterface;
 	}
 
-	private NbsInterfaceModel savingNbsInterfaceModelTimeStampHelper(String specimenColDateStr,
-														NbsInterfaceModel nbsInterface) {
-		if (specimenColDateStr != null) {
-			String pattern = "yyyyMMddHHmm";
-			if (specimenColDateStr.contains("-")) {
-				pattern = "yyyyMMddHHmmssX";
+	private void savingNbsInterfaceModelTimeStampHelper(String specimenColDateStr,
+														NbsInterfaceModel nbsInterface) throws XmlConversionException {
+
+		try {
+			if (specimenColDateStr != null) {
+				boolean noTimeStamp = false;
+				String pattern = "yyyyMMddHHmm";
+				if (specimenColDateStr.contains("-") || specimenColDateStr.contains("+") ) {
+					pattern = "yyyyMMddHHmmssX";
+				}
+				// date without time
+				if (specimenColDateStr.length() == 8) {
+					pattern = "yyyyMMdd";
+					noTimeStamp = true;
+				}
+				DateTimeFormatter formatter = DateTimeFormatter.ofPattern(pattern);
+				LocalDateTime localDateTime;
+				if (noTimeStamp) {
+					LocalDate localDate = LocalDate.parse(specimenColDateStr, formatter);
+					localDateTime = localDate.atStartOfDay();
+				} else {
+					localDateTime = LocalDateTime.parse(specimenColDateStr, formatter);
+				}
+				nbsInterface.setSpecimenCollDate(Timestamp.valueOf(localDateTime));
+			} else {
+				nbsInterface.setSpecimenCollDate(null);
 			}
-			DateTimeFormatter formatter = DateTimeFormatter.ofPattern(pattern);
-			LocalDateTime localDateTime = LocalDateTime.parse(specimenColDateStr, formatter);
-			nbsInterface.setSpecimenCollDate(Timestamp.valueOf(localDateTime));
-		} else {
-			nbsInterface.setSpecimenCollDate(null);
+		} catch (Exception e) {
+			throw new XmlConversionException(e.getMessage());
 		}
-		return nbsInterface;
+
 	}
 }
