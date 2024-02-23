@@ -16,21 +16,21 @@ public class HL7FileProcessComponent {
 
     @Handler
     public String process(String body) throws Exception {
-        String elrId="";
+        String elrId = "";
         try {
             logger.info("Calling HL7FileProcessComponent");
             String hl7Str = body;
-            logger.info("Message type:{}",msgType);
-            logger.info("Validation Active:{}",validationActive);
-            logger.info("HL7 Message:{}",hl7Str);
-
-            RawERLDto rawERLDto = new RawERLDto();
-            rawERLDto.setType(msgType);
-            rawERLDto.setValidationActive(false);
-            rawERLDto.setPayload(hl7Str);
-            elrId= rawELRService.submission(rawERLDto);
-        }
-        catch(Exception e) {
+            logger.info("Message type:{}", msgType);
+            logger.info("Validation Active:{}", validationActive);
+            logger.info("HL7 Message:{}", hl7Str);
+            if (hl7Str != null && !hl7Str.isEmpty()) {
+                RawERLDto rawERLDto = new RawERLDto();
+                rawERLDto.setType(msgType);
+                rawERLDto.setValidationActive(true);
+                rawERLDto.setPayload(hl7Str);
+                elrId = rawELRService.submission(rawERLDto);
+            }
+        } catch (Exception e) {
             logger.error(e.getMessage());
         }
         return elrId;

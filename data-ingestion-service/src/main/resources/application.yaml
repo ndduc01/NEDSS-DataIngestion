@@ -148,15 +148,10 @@ sasl:
     callback.handler.class: software.amazon.msk.auth.iam.IAMClientCallbackHandler
 
 ---
-di:
-  camel:
-    sftp-endpoint:
-      enabled: true
-
 sftp:
-  host: sftp.datateam-cdc-nbs.eqsandbox.com
+  enabled: ${DI_SFTP_ENABLE}
+  host: ${DI_SFTP_HOST}
   port: 22
-  username: diuser12
-  password: sftpdi202311
+  username: ${DI_SFTP_USER}
+  password: ${DI_SFTP_PWD}
   directory: /
-
