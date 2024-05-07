@@ -1,3 +1,4 @@
+
 import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 buildscript {
@@ -32,7 +33,9 @@ group = 'gov.cdc.dataingestion'
 version = '0.0.1-SNAPSHOT'
 
 java {
-	sourceCompatibility = JavaVersion.VERSION_17
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(17)
+	}
 }
 ext.isReleaseVersion = !version.endsWith("SNAPSHOT")
 
@@ -249,26 +252,16 @@ dependencies {
 	runtimeOnly 'org.springframework.boot:spring-boot-devtools:3.2.0'
 	//It's needed for dynamic token resolver
 	runtimeOnly 'com.nimbusds:oauth2-oidc-sdk:11.8'
-
-	// Jakarta XML Binding API and its runtime implementation
+	// Below is needed to compile jaxb generated code
 	implementation 'jakarta.xml.bind:jakarta.xml.bind-api:4.0.0'
-	implementation 'org.glassfish.jaxb:jaxb-runtime:4.0.2'
 
-	// JAXB implementation for runtime; ensures that JAXB implementation classes are available
-	runtimeOnly 'com.sun.xml.bind:jaxb-impl:4.0.0'
+	// Below is needed for runtime with jaxb generated code
+	runtimeOnly 'org.glassfish.jaxb:jaxb-runtime:4.0.2'
 
-	// Required for JAXB code generation if using the Gradle JAXB plugin or similar tools
+	// Only need below two dependencies for java code generation from xsd file(s)
 	jaxb 'jakarta.xml.bind:jakarta.xml.bind-api:4.0.0'
 	jaxb 'org.glassfish.jaxb:jaxb-xjc:4.0.2'
 
-	// If using Java 11 or later, these dependencies ensure JAXB functionality is available,
-	// as JAXB is not included in the JDK from Java 11 onwards.
-	if (JavaVersion.current().isJava11Compatible()) {
-		implementation 'javax.xml.bind:jaxb-api:2.3.1'
-		implementation 'com.sun.xml.bind:jaxb-core:2.3.0.1'
-		implementation 'com.sun.xml.bind:jaxb-impl:2.3.3'
-	}
-	////
 	// Liquibase
 	liquibaseRuntime 'org.liquibase:liquibase-core:4.24.0'
 	liquibaseRuntime group: 'javax.xml.bind', name: 'jaxb-api', version: '2.3.1'
