@@ -56,15 +56,24 @@ task jaxb {
 compileJava.dependsOn jaxb
 
 dependencies {
-	// Below is needed to compile jaxb generated code
+	// Jakarta XML Binding API and its runtime implementation
 	implementation 'jakarta.xml.bind:jakarta.xml.bind-api:4.0.0'
+	implementation 'org.glassfish.jaxb:jaxb-runtime:4.0.2'
 
-	// Below is needed for runtime with jaxb generated code
-	runtimeOnly 'org.glassfish.jaxb:jaxb-runtime:4.0.2'
+	// JAXB implementation for runtime; ensures that JAXB implementation classes are available
+	runtimeOnly 'com.sun.xml.bind:jaxb-impl:4.0.0'
 
-	// Only need below two dependencies for java code generation from xsd file(s)
+	// Required for JAXB code generation if using the Gradle JAXB plugin or similar tools
 	jaxb 'jakarta.xml.bind:jakarta.xml.bind-api:4.0.0'
 	jaxb 'org.glassfish.jaxb:jaxb-xjc:4.0.2'
+
+	// If using Java 11 or later, these dependencies ensure JAXB functionality is available,
+	// as JAXB is not included in the JDK from Java 11 onwards.
+	if (JavaVersion.current().isJava11Compatible()) {
+		implementation 'javax.xml.bind:jaxb-api:2.3.1'
+		implementation 'com.sun.xml.bind:jaxb-core:2.3.0.1'
+		implementation 'com.sun.xml.bind:jaxb-impl:2.3.3'
+	}
 }
 
 test {
