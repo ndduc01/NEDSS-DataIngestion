@@ -59,7 +59,8 @@ dependencies {
 	// Below is needed for runtime with jaxb generated code
 //	runtimeOnly 'org.glassfish.jaxb:jaxb-runtime:4.0.2'
 	// https://mvnrepository.com/artifact/org.glassfish.jaxb/jaxb-runtime
-	runtimeOnly 'org.glassfish.jaxb:jaxb-runtime:4.0.5'
+//	runtimeOnly 'org.glassfish.jaxb:jaxb-runtime:4.0.5'
+	implementation 'org.glassfish.jaxb:jaxb-runtime:4.0.5'
 
 	// Only need below two dependencies for java code generation from xsd file(s)
 	jaxb 'jakarta.xml.bind:jakarta.xml.bind-api:4.0.2'
