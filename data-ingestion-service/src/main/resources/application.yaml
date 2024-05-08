@@ -21,7 +21,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${DI_AUTH_URI}
+          issuer-uri: ${DI_AUTH_URI:http://host.docker.internal:8080/realms/NBS}
           jwk-set-uri: ${spring.security.oauth2.resourceserver.jwt.issuer-uri}/protocol/openid-connect/certs
 
 auth:
@@ -38,26 +38,26 @@ spring:
     activate:
       on-profile: default
   datasource:
-    url: jdbc:sqlserver://${DI_DBSERVER};databaseName=${DI_DBNAME};encrypt=true;trustServerCertificate=true;
-    username: ${DI_USERNAME}
-    password: ${DI_PASSWORD}
+    url: jdbc:sqlserver://${DI_DBSERVER:host.docker.internal};databaseName=${DI_DBNAME:NBS_DataIngest};encrypt=true;trustServerCertificate=true;
+    username: ${DI_USERNAME:sa}
+    password: ${DI_PASSWORD:fake.fake.fake.1234}
     driverClassName: com.microsoft.sqlserver.jdbc.SQLServerDriver
     hikari:
       connection-timeout: 60000
       maximum-pool-size: 5
     nbs:
-      url: jdbc:sqlserver://${DI_NBS_DBSERVER};databaseName=${DI_NBS_DBNAME};encrypt=true;trustServerCertificate=true;
-      username: ${DI_NBS_DBUSER}
-      password: ${DI_NBS_DBPASSWORD}
+      url: jdbc:sqlserver://${DI_NBS_DBSERVER:host.docker.internal};databaseName=${DI_NBS_DBNAME:nbs_msgoute};encrypt=true;trustServerCertificate=true;
+      username: ${DI_NBS_DBUSER:sa}
+      password: ${DI_NBS_DBPASSWORD:fake.fake.fake.1234}
       driverClassName: com.microsoft.sqlserver.jdbc.SQLServerDriver
     odse:
-      url: jdbc:sqlserver://${DI_NBS_DBSERVER};databaseName=${DI_ODSE_DBNAME};encrypt=true;trustServerCertificate=true;
+      url: jdbc:sqlserver://${DI_NBS_DBSERVER:host.docker.internal};databaseName=${DI_ODSE_DBNAME:NBS_ODSE};encrypt=true;trustServerCertificate=true;
   jpa:
     show-sql: true
     hibernate:
       ddl-auto: none
   kafka:
-    bootstrap-servers: ${BOOTSTRAP_SERVERS}
+    bootstrap-servers: ${BOOTSTRAP_SERVERS:b-2.nbskafkadev01.f5qktb.c11.kafka.us-east-1.amazonaws.com:9092}
     group-id: data-ingestion-group
     consumer:
       maxPollIntervalMs: 30000
@@ -93,26 +93,26 @@ spring:
     activate:
       on-profile: kubernetes
   datasource:
-    url: jdbc:sqlserver://${DI_DBSERVER};databaseName=${DI_DBNAME};encrypt=true;trustServerCertificate=true;
-    username: ${DI_USERNAME}
-    password: ${DI_PASSWORD}
+    url: jdbc:sqlserver://${DI_DBSERVER:host.docker.internal};databaseName=${DI_DBNAME:NBS_DataIngest};encrypt=true;trustServerCertificate=true;
+    username: ${DI_USERNAME:sa}
+    password: ${DI_PASSWORD:fake.fake.fake.1234}
     driverClassName: com.microsoft.sqlserver.jdbc.SQLServerDriver
     hikari:
       connection-timeout: 60000
       maximum-pool-size: 5
     nbs:
-      url: jdbc:sqlserver://${DI_NBS_DBSERVER};databaseName=${DI_NBS_DBNAME};encrypt=true;trustServerCertificate=true;
-      username: ${DI_NBS_DBUSER}
-      password: ${DI_NBS_DBPASSWORD}
+      url: jdbc:sqlserver://${DI_NBS_DBSERVER:host.docker.internal};databaseName=${DI_NBS_DBNAME:nbs_msgoute};encrypt=true;trustServerCertificate=true;
+      username: ${DI_NBS_DBUSER:sa}
+      password: ${DI_NBS_DBPASSWORD:fake.fake.fake.1234}
       driverClassName: com.microsoft.sqlserver.jdbc.SQLServerDriver
     odse:
-      url: jdbc:sqlserver://${DI_NBS_DBSERVER};databaseName=${DI_ODSE_DBNAME};encrypt=true;trustServerCertificate=true;
+      url: jdbc:sqlserver://${DI_NBS_DBSERVER:host.docker.internal};databaseName=${DI_ODSE_DBNAME:NBS_ODSE};encrypt=true;trustServerCertificate=true;
   jpa:
     show-sql: true
     hibernate:
       ddl-auto: none
   kafka:
-    bootstrap-servers: ${BOOTSTRAP_SERVERS}
+    bootstrap-servers: ${BOOTSTRAP_SERVERS:b-2.nbskafkadev01.f5qktb.c11.kafka.us-east-1.amazonaws.com:9092}
     group-id: data-ingestion-group
     consumer:
       maxPollIntervalMs: 30000
