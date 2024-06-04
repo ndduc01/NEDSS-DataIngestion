@@ -47,7 +47,7 @@ jobs:
 
   call-update-helm-int:
     name: Request deployment in INT1
-    needs: call-build-microservice-container-workflow
+    needs: [call-build-microservice-container-workflow, call-update-helm-dts]
     uses: CDCgov/NEDSS-Workflows/.github/workflows/Update-helm-charts.yaml@main
     with:
       microservice_name: data-ingestion-service
