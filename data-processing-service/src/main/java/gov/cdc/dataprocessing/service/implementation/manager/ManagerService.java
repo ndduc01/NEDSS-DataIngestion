@@ -81,6 +81,8 @@ public class ManagerService implements IManagerService {
     private final IPamService pamService;
     private final IInvestigationNotificationService investigationNotificationService;
 
+    private static final String EXCEPTIONLOGMSG = "Exception while formatting exception message for Activity Log: ";
+
     @Autowired
     public ManagerService(IObservationService observationService,
                           IEdxLogService edxLogService,
@@ -115,12 +117,8 @@ public class ManagerService implements IManagerService {
     @Transactional
     public void processDistribution(String eventType, String data) throws DataProcessingConsumerException {
         if (AuthUtil.authUser != null) {
-            switch (eventType) {
-                case EVENT_ELR:
-                    processingELR(data);
-                    break;
-                default:
-                    break;
+            if(eventType.equals(EVENT_ELR)) {
+                processingELR(data);
             }
         } else {
             throw new DataProcessingConsumerException("Invalid User");
@@ -152,8 +150,7 @@ public class ManagerService implements IManagerService {
                 edxLabInformationDto.setErrorText(EdxELRConstant.ELR_MASTER_LOG_ID_22);
             }
 
-            if (edxLabInformationDto.isLabIsCreate()) {
-                if (observationDto.getJurisdictionCd() != null && observationDto.getProgAreaCd() != null) {
+            if (edxLabInformationDto.isLabIsCreate() && observationDto.getJurisdictionCd() != null && observationDto.getProgAreaCd() != null) {
 
                     // This logic here determine whether logic is mark as review or not
                     decisionSupportService.validateProxyContainer(labResultProxyContainer, edxLabInformationDto);
@@ -198,12 +195,12 @@ public class ManagerService implements IManagerService {
                     if (edxLabInformationDto.getPageActContainer() != null
                     || edxLabInformationDto.getPamContainer() != null) {
                         if (edxLabInformationDto.getPageActContainer() != null) {
-                            var pageActProxyVO = (PageActProxyContainer) edxLabInformationDto.getPageActContainer();
+                            var pageActProxyVO = edxLabInformationDto.getPageActContainer();
                             trackerView.setPublicHealthCase(pageActProxyVO.getPublicHealthCaseContainer().getThePublicHealthCaseDto());
                         }
                         else
                         {
-                            var pamProxyVO = (PamProxyContainer)edxLabInformationDto.getPamContainer();
+                            var pamProxyVO = edxLabInformationDto.getPamContainer();
                             trackerView.setPublicHealthCase(pamProxyVO.getPublicHealthCaseContainer().getThePublicHealthCaseDto());
                         }
                     }
@@ -211,7 +208,7 @@ public class ManagerService implements IManagerService {
                     {
                         if (edxLabInformationDto.getAction() != null) {
                             //action 3 is REVIEW
-                            System.out.println("TEST");
+                            logger.debug("TEST");
                         }
                     }
 
@@ -226,7 +223,6 @@ public class ManagerService implements IManagerService {
 
 
                 }
-            }
         } catch (Exception e) {
             if (nbsInterfaceModel != null) {
                 nbsInterfaceModel.setRecordStatusCd("FAILED_V2_STEP_2");
@@ -237,6 +233,7 @@ public class ManagerService implements IManagerService {
 
     }
 
+    @SuppressWarnings("java:S125")
     @Transactional
     public void initiatingLabProcessing(String data) {
         NbsInterfaceModel nbsInterfaceModel = null;
@@ -381,6 +378,7 @@ public class ManagerService implements IManagerService {
         }
     }
 
+    @SuppressWarnings("java:S125")
     private void processingELR(String data) {
         NbsInterfaceModel nbsInterfaceModel = null;
         EdxLabInformationDto edxLabInformationDto = new EdxLabInformationDto();
@@ -472,7 +470,7 @@ public class ManagerService implements IManagerService {
             if (nbsInterfaceModel != null) {
                 nbsInterfaceModel.setRecordStatusCd("FAILED_V2");
                 nbsInterfaceRepository.save(nbsInterfaceModel);
-                System.out.println("ERROR");
+                logger.debug("ERROR");
             }
             String accessionNumberToAppend = "Accession Number:" + edxLabInformationDto.getFillerNumber();
             edxLabInformationDto.setStatus(NbsInterfaceStatus.Failure);
@@ -530,7 +528,7 @@ public class ManagerService implements IManagerService {
                             detailedMsg = "SQLException while inserting into "+tableName+"\n "+accessionNumberToAppend+"\n "+exceptionMessage;
                             detailedMsg = detailedMsg.substring(0,Math.min(detailedMsg.length(), 2000));
                         }catch(Exception ex){
-                            logger.error("Exception while formatting exception message for Activity Log: "+ex.getMessage(), ex);
+                            logger.error(EXCEPTIONLOGMSG+ex.getMessage(), ex);
                         }
                     } else if (e.getMessage().contains(EdxELRConstant.DATE_VALIDATION)) {
                         edxLabInformationDto.setErrorText(EdxELRConstant.ELR_MASTER_LOG_ID_20);
@@ -562,7 +560,7 @@ public class ManagerService implements IManagerService {
                             String exceptionMessage = accessionNumberToAppend+"\n"+errors;
                             detailedMsg = exceptionMessage.substring(0,Math.min(exceptionMessage.length(), 2000));
                         }catch(Exception ex){
-                            logger.error("Exception while formatting exception message for Activity Log: "+ex.getMessage(), ex);
+                            logger.error(EXCEPTIONLOGMSG+ex.getMessage(), ex);
                         }
                     }
                 }
@@ -577,7 +575,7 @@ public class ManagerService implements IManagerService {
                         detailedMsg = "Blank identifiers in segments "+exceptionMsg.substring(exceptionMsg.indexOf(textToLookFor)+textToLookFor.length())+"\n\n"+accessionNumberToAppend;
                         detailedMsg = detailedMsg.substring(0,Math.min(detailedMsg.length(), 2000));
                     }catch(Exception ex){
-                        logger.error("Exception while formatting exception message for Activity Log: "+ex.getMessage(), ex);
+                        logger.error(EXCEPTIONLOGMSG+ex.getMessage(), ex);
                     }
                 }
 
@@ -599,8 +597,9 @@ public class ManagerService implements IManagerService {
         }
     }
 
-    private CompletableFuture<Void> loadAndInitCachedValueAsync() {
-        CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+    @SuppressWarnings({"java:S112", "java:S2696"})
+    private CompletableFuture<Void>loadAndInitCachedValueAsync() {
+        return CompletableFuture.runAsync(() -> {
             if (SrteCache.loincCodesMap.isEmpty()) {
                 try {
                     cachingValueService.getAOELOINCCodes();
@@ -825,10 +824,9 @@ public class ManagerService implements IManagerService {
 
             }
         });
-
-        return future;
     }
 
+    @SuppressWarnings("java:S125")
     private void requiredFieldError(String errorTxt, EdxLabInformationDto edxLabInformationDT) throws DataProcessingException {
         if (errorTxt != null) {
             edxLabInformationDT	.setErrorText(EdxELRConstant.ELR_MASTER_LOG_ID_5);
@@ -838,10 +836,10 @@ public class ManagerService implements IManagerService {
                         new ArrayList<>());
             }
 
-            //TODO: LOGGING
-//            setActivityDetailLog((ArrayList<Object>) edxLabInformationDT.getEdxActivityLogDto().getEDXActivityLogDTWithVocabDetails(),
-//                    String.valueOf(edxLabInformationDT.getLocalId()),
-//                    EdxRuleAlgorothmManagerDto.STATUS_VAL.Failure, errorTxt);
+            // LOGGING
+            // setActivityDetailLog((ArrayList<Object>) edxLabInformationDT.getEdxActivityLogDto().getEDXActivityLogDTWithVocabDetails(),
+            // String.valueOf(edxLabInformationDT.getLocalId()),
+            // EdxRuleAlgorothmManagerDto.STATUS_VAL.Failure, errorTxt);
 
             edxLabInformationDT.setInvestigationMissingFields(true);
             throw new DataProcessingException("MISSING REQUIRED FIELDS: "+errorTxt);
