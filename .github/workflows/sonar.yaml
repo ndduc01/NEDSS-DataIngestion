@@ -12,6 +12,9 @@ on:
       SONAR_TOKEN:
         description: "Secret named SONAR_TOKEN that references the sonar token secret corresponding to the project in sonarcloud."
         required: true
+  push:
+    branches:
+      - main
   pull_request:
     paths:
       - "data-ingestion-service/**"
