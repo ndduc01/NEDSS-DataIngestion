@@ -1,4 +1,5 @@
-name: SonarCloud
+name: SonarCloud Scan
+
 on:
   workflow_call:
     secrets:
@@ -18,18 +19,20 @@ on:
       - "hl7-parser/**"
       - "cdaschema/**"
       - ".github/workflows/sonar.yaml"
-env:
-  deployment_env: dev
-  accountid: ${{secrets.cdc_nbs_sandbox_shared_services_accountid}}
+
+# env:
+#   deployment_env: dev
+#   accountid: ${{ secrets.cdc_nbs_sandbox_shared_services_accountid }}
 
 jobs:
-  pipeline:
-    name: Build and analyze
+  sonar-scan:
+    name: SonarCloud Scan
     runs-on: ubuntu-latest
 
     permissions:
       id-token: write
       contents: read
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -39,7 +42,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: 17
-          distribution: 'zulu' # Alternative distribution options are available
+          distribution: 'zulu'  # Alternative distribution options are available
 
       - name: Cache SonarCloud packages
         uses: actions/cache@v4
@@ -48,23 +51,9 @@ jobs:
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
-      - name: Cache Gradle packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.gradle/caches
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
-          restore-keys: ${{ runner.os }}-gradle
-
-      - name: Build and analyze
-        working-directory: ./
+      - name: Run SonarCloud Analysis
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_TOKEN: c9725eb0d7e2537339fb73924457390d28390e50
         run: |
-          ./gradlew build jacocoTestReport sonar "-Dorg.gradle.jvmargs=-Xms512m -Xmx4g -XX:MaxMetaspaceSize=1g"
-
-      - name: Publish Testing Reports
-        uses: actions/upload-artifact@v4
-        with:
-          name: testing
-          path: ./**/build/reports
+          ./gradlew sonarqube -Dsonar.projectKey=<your_project_key> -Dsonar.organization=<your_organization> -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=$SONAR_TOKEN
