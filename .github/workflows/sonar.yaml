@@ -59,4 +59,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: c9725eb0d7e2537339fb73924457390d28390e50
         run: |
-          ./gradlew sonarqube -Dsonar.projectKey=NEDSS-DataIngestion -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=$SONAR_TOKEN
+          ./gradlew sonarqube -Dsonar.projectKey=ndduc01_NEDSS-DataIngestion -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=$SONAR_TOKEN
